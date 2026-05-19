@@ -19,6 +19,7 @@ use Mastertek\IranSms\Drivers\RayganSmsDriver;
 use Mastertek\IranSms\Drivers\SmsIrDriver;
 use Mastertek\IranSms\Drivers\WebOneDriver;
 use Illuminate\Foundation\Application;
+use Mastertek\IranSms\Drivers\ParsGreenDriver;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -109,6 +110,11 @@ final class IranSmsServiceProvider extends PackageServiceProvider
         $this->app->bind(
             MedianaDriver::class,
             fn(): MedianaDriver => new MedianaDriver(...config()->array('iran-sms.providers.mediana'))
+        );
+
+        $this->app->bind(
+            ParsGreenDriver::class,
+            fn(): ParsGreenDriver => new ParsGreenDriver(...config()->array('iran-sms.providers.parsgreen'))
         );
     }
 }
