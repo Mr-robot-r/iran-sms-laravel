@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\PayamResanDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\PayamResanDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -168,10 +168,11 @@ final class PayamResanDriverTest extends TestCase
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.sms-webservice.com/api/V3/AccountInfo'
-                && $request->method() === 'POST'
-                && $request->hasHeader('Content-Type', 'application/json')
-                && $request['ApiKey'] === 'sms_token'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://api.sms-webservice.com/api/V3/AccountInfo'
+            && $request->method() === 'POST'
+            && $request->hasHeader('Content-Type', 'application/json')
+            && $request['ApiKey'] === 'sms_token'
         );
     }
 

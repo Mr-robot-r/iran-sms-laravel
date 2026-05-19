@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Exceptions;
+namespace Mastertek\IranSms\Exceptions;
 
 use LogicException;
 
@@ -11,4 +11,6 @@ use LogicException;
  *
  * Exception thrown when the format of the pattern variables does not match the SMS provider's expected structure.
  */
-final class InvalidPatternStructureException extends LogicException {}
+final class InvalidPatternStructureException extends LogicException
+{
+}

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\WebOneDriver;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\WebOneDriver;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -34,7 +34,7 @@ final class WebOneDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', ['end-point', ['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->hasHeader('X-API-KEY', 'sms_token')
+        Http::assertSent(fn(Request $request): bool => $request->hasHeader('X-API-KEY', 'sms_token')
             && $request->hasHeader('Content-Type', 'application/json')
             && $request->url() === 'https://api.payamakapi.ir/api/v1/end-point'
             && $request->method() === 'POST'
@@ -90,7 +90,7 @@ final class WebOneDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/Send'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/Send'
             && $request['From'] === '4567'
             && $request['ToNumbers'] === ['0913', '0914']
             && $request['Content'] === 'Text message');
@@ -103,7 +103,7 @@ final class WebOneDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendOtp', ['0913', 'Otp message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/SmartOTP'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/SmartOTP'
             && $request['ToNumber'] === '0913'
             && $request['Content'] === 'Otp message');
     }
@@ -126,7 +126,8 @@ final class WebOneDriverTest extends TestCase
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/GetCredit'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://api.payamakapi.ir/api/v1/SMS/GetCredit'
             && $request->hasHeader('X-API-KEY', 'sms_token')
             && $request->method() === 'GET'
         );

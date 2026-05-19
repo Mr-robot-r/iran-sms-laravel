@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Dtos;
+namespace Mastertek\IranSms\Dtos;
 
 /**
  * Represents a mocked response used in tests.
@@ -14,7 +14,8 @@ final readonly class MockResponse
         private string $errorMessage,
         private string|int $errorCode,
         private bool $shouldThrow,
-    ) {}
+    ) {
+    }
 
     /**
      * Get a mock configuration for successful SMS sending in tests.

@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\AmootSmsDriver;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\AmootSmsDriver;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;

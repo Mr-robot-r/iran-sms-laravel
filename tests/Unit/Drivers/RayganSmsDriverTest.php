@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\RayganSmsDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\RayganSmsDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -37,7 +37,7 @@ final class RayganSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', ['end-point', ['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/end-point'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/end-point'
             && $request->method() === 'POST'
             && $request->hasHeader('Authorization', $this->expectedAuth())
             && $request['key'] === 'value');
@@ -94,7 +94,8 @@ final class RayganSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsAPI/SendMessage'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsAPI/SendMessage'
             && $request['PhoneNumber'] === '4567'
             && $request['Message'] === 'Text message'
             && $request['Mobiles'] === ['0913', '0914']
@@ -114,7 +115,7 @@ final class RayganSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'sendPattern', [['0913', '0914'], 'pattern_code', ['token1' => 'value_1', 'token2' => 'value_2'], '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsApiWithPattern/SendMessage'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsApiWithPattern/SendMessage'
             && $request['AccessHash'] === 'sms_token'
             && $request['PhoneNumber'] === '4567'
             && $request['PatternId'] === 'pattern_code'
@@ -192,7 +193,8 @@ final class RayganSmsDriverTest extends TestCase
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsAPI/GetCredit'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://smspanel.trez.ir/api/smsAPI/GetCredit'
             && $request->hasHeader('Authorization', $this->expectedAuth())
             && $request->method() === 'POST'
         );
@@ -214,6 +216,6 @@ final class RayganSmsDriverTest extends TestCase
 
     private function expectedAuth(): string
     {
-        return 'Basic '.base64_encode('sms_username:sms_password');
+        return 'Basic ' . base64_encode('sms_username:sms_password');
     }
 }

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Commands;
+namespace Mastertek\IranSms\Commands;
 
-use AliYavari\IranSms\Models\SmsLog;
+use Mastertek\IranSms\Models\SmsLog;
 use Illuminate\Console\Command;
 
 /**
@@ -33,7 +33,7 @@ final class PruneLogsCommand extends Command
 
         $this->components->task(
             "Pruning logs created before {$days} days ago ...",
-            fn () => SmsLog::where('created_at', '<', now()->subDays($days))->delete()
+            fn() => SmsLog::where('created_at', '<', now()->subDays($days))->delete()
         );
 
         $this->components->info("Logs created before [{$days} days] ago pruned successfully.");

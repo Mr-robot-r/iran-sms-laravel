@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\AsanakDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\AsanakDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -36,7 +36,7 @@ final class AsanakDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', ['end-point', ['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/end-point'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/end-point'
             && $request->hasHeader('Content-Type', 'application/json')
             && $request->method() === 'POST'
             && $request['username'] === 'sms_username'
@@ -48,10 +48,12 @@ final class AsanakDriverTest extends TestCase
     public function it_sets_and_returns_the_successful_response_status_correctly(): void
     {
         Http::fake([
-            'https://sms.asanak.ir/webservice/v2rest/end-point' => Http::response(['meta' => [
-                'status' => 200,
-                'message' => 'success',
-            ]]), // status `200` is successful
+            'https://sms.asanak.ir/webservice/v2rest/end-point' => Http::response([
+                'meta' => [
+                    'status' => 200,
+                    'message' => 'success',
+                ]
+            ]), // status `200` is successful
         ]);
 
         $smsDriver = $this->driver();
@@ -65,10 +67,12 @@ final class AsanakDriverTest extends TestCase
     public function it_sets_and_returns_the_failed_response_status_correctly(): void
     {
         Http::fake([
-            'https://sms.asanak.ir/webservice/v2rest/end-point' => Http::response(['meta' => [
-                'status' => 1008,
-                'message' => 'Bad Request, Validation Data Error',
-            ]]),
+            'https://sms.asanak.ir/webservice/v2rest/end-point' => Http::response([
+                'meta' => [
+                    'status' => 1008,
+                    'message' => 'Bad Request, Validation Data Error',
+                ]
+            ]),
         ]);
 
         $smsDriver = $this->driver();
@@ -99,7 +103,8 @@ final class AsanakDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/sendsms'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/sendsms'
             && $request['source'] === '4567'
             && $request['message'] === 'Text message'
             && $request['destination'] === '0913,0914'
@@ -114,7 +119,8 @@ final class AsanakDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendPattern', [['0913'], 'pattern_code', ['key_1' => 'value_1', 'key_2' => 'value_2'], '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/template'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/template'
             && $request['template_id'] === 'pattern_code'
             && $request['destination'] === '0913'
             && $request['parameters'] === ['key_1' => 'value_1', 'key_2' => 'value_2']
@@ -152,16 +158,19 @@ final class AsanakDriverTest extends TestCase
     #[Test]
     public function it_returns_credit_successfully(): void
     {
-        Http::fake(['*' => Http::response([
-            'meta' => ['status' => 200, 'message' => 'success'],
-            'data' => ['credit' => 1000],
-        ])]);
+        Http::fake([
+            '*' => Http::response([
+                'meta' => ['status' => 200, 'message' => 'success'],
+                'data' => ['credit' => 1000],
+            ])
+        ]);
 
         $credit = $this->driver()->credit();
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/getrialcredit'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://sms.asanak.ir/webservice/v2rest/getrialcredit'
             && $request['username'] === 'sms_username'
             && $request['password'] === 'sms_password'
             && $request->method() === 'POST'

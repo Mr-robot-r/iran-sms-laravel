@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Channels;
+namespace Mastertek\IranSms\Tests\Unit\Channels;
 
-use AliYavari\IranSms\Channels\SmsChannel;
-use AliYavari\IranSms\Contracts\Sms;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Channels\SmsChannel;
+use Mastertek\IranSms\Contracts\Sms;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Notifications\Notification;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;
@@ -35,7 +35,7 @@ final class SmsChannelTest extends TestCase
         $notification->shouldReceive('toSms')->once()->andReturn('sms');
 
         $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage('The toSms() method must return an instance of "\AliYavari\IranSms\Contracts\Sms", "string" given.');
+        $this->expectExceptionMessage('The toSms() method must return an instance of "\Mastertek\IranSms\Contracts\Sms", "string" given.');
 
         $this->channel()->send(new stdClass, $notification);
     }

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Feature\Facades;
+namespace Mastertek\IranSms\Tests\Feature\Facades;
 
-use AliYavari\IranSms\Drivers\FakeDriver;
-use AliYavari\IranSms\Dtos\MockResponse;
-use AliYavari\IranSms\Facades\Sms;
-use AliYavari\IranSms\SmsManager;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\FakeDriver;
+use Mastertek\IranSms\Dtos\MockResponse;
+use Mastertek\IranSms\Facades\Sms;
+use Mastertek\IranSms\SmsManager;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Test;
@@ -65,7 +65,7 @@ final class SmsTest extends TestCase
         Sms::fake($sampleDrivers);
 
         collect($sampleDrivers)
-            ->map(fn (string $driver): ?string => $driver === 'default' ? null : $driver)
+            ->map(fn(string $driver): ?string => $driver === 'default' ? null : $driver)
             ->each(function (?string $driver): void {
                 $sms = Sms::driver($driver)->otp('012', 'test')->send();
 
@@ -83,7 +83,7 @@ final class SmsTest extends TestCase
         Sms::fake($sampleDrivers, Sms::successfulRequest());
 
         collect($sampleDrivers)
-            ->map(fn (string $driver): ?string => $driver === 'default' ? null : $driver)
+            ->map(fn(string $driver): ?string => $driver === 'default' ? null : $driver)
             ->each(function (?string $driver): void {
                 $sms = Sms::driver($driver)->otp('012', 'test')->send();
 
@@ -101,7 +101,7 @@ final class SmsTest extends TestCase
         Sms::fake($sampleDrivers, Sms::failedRequest('Custom error message', 40));
 
         collect($sampleDrivers)
-            ->map(fn (string $driver): ?string => $driver === 'default' ? null : $driver)
+            ->map(fn(string $driver): ?string => $driver === 'default' ? null : $driver)
             ->each(function (?string $driver): void {
                 $sms = Sms::driver($driver)->otp('012', 'test')->send();
 
@@ -169,7 +169,7 @@ final class SmsTest extends TestCase
     public function it_throws_an_exception_if_we_providers_with_invalid_config(): void
     {
         $this->expectException(UnexpectedValueException::class);
-        $this->expectExceptionMessage("Collection should only include [AliYavari\IranSms\Dtos\MockResponse] items, but 'array' found at position 0.");
+        $this->expectExceptionMessage("Collection should only include [Mastertek\IranSms\Dtos\MockResponse] items, but 'array' found at position 0.");
 
         Sms::fake([
             'test' => [Sms::successfulRequest()],

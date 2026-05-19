@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Abstracts;
+namespace Mastertek\IranSms\Abstracts;
 
-use AliYavari\IranSms\Concerns\HasLog;
-use AliYavari\IranSms\Contracts\Sms;
-use AliYavari\IranSms\Enums\Type;
-use AliYavari\IranSms\Exceptions\SmsContentNotDefinedException;
-use AliYavari\IranSms\Exceptions\SmsIsImmutableException;
-use AliYavari\IranSms\Exceptions\SmsNotSentYetException;
+use Mastertek\IranSms\Concerns\HasLog;
+use Mastertek\IranSms\Contracts\Sms;
+use Mastertek\IranSms\Enums\Type;
+use Mastertek\IranSms\Exceptions\SmsContentNotDefinedException;
+use Mastertek\IranSms\Exceptions\SmsIsImmutableException;
+use Mastertek\IranSms\Exceptions\SmsNotSentYetException;
 
 /**
  * @internal
@@ -168,7 +168,7 @@ abstract class Driver implements Sms
      */
     final public function send(): static
     {
-        if (! isset($this->type)) {
+        if (!isset($this->type)) {
             throw new SmsContentNotDefinedException('Before sending an SMS you must define its content by one of these methods "otp, pattern, text".');
         }
 
@@ -206,7 +206,7 @@ abstract class Driver implements Sms
     {
         $this->checkSmsIsSent();
 
-        return ! $this->isSuccessful();
+        return !$this->isSuccessful();
     }
 
     /**
@@ -262,7 +262,7 @@ abstract class Driver implements Sms
      */
     private function checkSmsIsSent(): void
     {
-        if (! $this->isSent) {
+        if (!$this->isSent) {
             throw new SmsNotSentYetException('To check SMS status, you first must send it with "send".');
         }
     }

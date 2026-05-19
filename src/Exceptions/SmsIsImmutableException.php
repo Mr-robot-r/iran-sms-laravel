@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Exceptions;
+namespace Mastertek\IranSms\Exceptions;
 
 use LogicException;
 
@@ -11,4 +11,6 @@ use LogicException;
  *
  * Exception thrown when attempting to modify the content of an SMS instance.
  */
-final class SmsIsImmutableException extends LogicException {}
+final class SmsIsImmutableException extends LogicException
+{
+}

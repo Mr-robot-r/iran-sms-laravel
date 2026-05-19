@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Exceptions;
+namespace Mastertek\IranSms\Exceptions;
 
 use LogicException;
 
@@ -11,4 +11,6 @@ use LogicException;
  *
  * Exception thrown when attempting to check the SMS sending status before the message has been sent.
  */
-final class SmsNotSentYetException extends LogicException {}
+final class SmsNotSentYetException extends LogicException
+{
+}

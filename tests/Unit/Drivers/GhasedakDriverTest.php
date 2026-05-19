@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\GhasedakDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\GhasedakDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
@@ -36,7 +36,7 @@ final class GhasedakDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', ['end-point', ['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->hasHeader('ApiKey', 'sms_token')
+        Http::assertSent(fn(Request $request): bool => $request->hasHeader('ApiKey', 'sms_token')
             && $request->hasHeader('Content-Type', 'application/json')
             && $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/end-point'
             && $request->method() === 'POST'
@@ -102,7 +102,8 @@ final class GhasedakDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/SendBulkSMS'
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/SendBulkSMS'
             && $request['lineNumber'] === '4567'
             && $request['message'] === 'Text message'
             && $request['receptors'] === ['0913', '0914']
@@ -122,7 +123,7 @@ final class GhasedakDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendPattern', [['0913', '0914'], 'pattern_code', ['key_1' => 'value_1', 'key_2' => 'value_2'], '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/SendOtpSMS'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/SendOtpSMS'
             && $request['templateName'] === 'pattern_code'
             && $request['receptors'] === [
                 ['mobile' => '0913', 'clientReferenceId' => null],
@@ -163,9 +164,10 @@ final class GhasedakDriverTest extends TestCase
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/GetAccountInformation'
-                && $request->method() === 'GET'
-                && $request->hasHeader('ApiKey', 'sms_token')
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://gateway.ghasedak.me/rest/api/v1/WebService/GetAccountInformation'
+            && $request->method() === 'GET'
+            && $request->hasHeader('ApiKey', 'sms_token')
         );
     }
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Models;
+namespace Mastertek\IranSms\Models;
 
-use AliYavari\IranSms\Enums\Type;
+use Mastertek\IranSms\Enums\Type;
 use Illuminate\Database\Eloquent\Model;
 
 /**

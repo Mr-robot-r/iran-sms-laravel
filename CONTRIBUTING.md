@@ -80,15 +80,15 @@ Add your driver configuration to [`./config/iran-sms.php`](./config/iran-sms.php
 
 ### Step 2: Create the Driver Class
 
-Create a new class for your provider inside [`./src/Drivers/`](./src/Drivers/). The class must extend `AliYavari\IranSms\Abstracts\Driver` and implement the required methods using the simplest and most efficient approach supported by your provider.
+Create a new class for your provider inside [`./src/Drivers/`](./src/Drivers/). The class must extend `Mastertek\IranSms\Abstracts\Driver` and implement the required methods using the simplest and most efficient approach supported by your provider.
 
 **Note:** Fetch configuration values in the constructor.
 
-**Note:** If a message type is not supported by your provider, throw `AliYavari\IranSms\Exceptions\UnsupportedMethodException` using its static make() method. To get the driver name dynamically within your class, use `$this->getDriverName()`.
+**Note:** If a message type is not supported by your provider, throw `Mastertek\IranSms\Exceptions\UnsupportedMethodException` using its static make() method. To get the driver name dynamically within your class, use `$this->getDriverName()`.
 
 ```php
-use AliYavari\IranSms\Abstracts\Driver;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
 
 final class YourNameDriver extends Driver
 {
@@ -161,7 +161,7 @@ public function packageRegistered(): void
 Add a method in [`./src/SmsManager.php`](./src/SmsManager.php). The method name must follow the pattern: `create*Driver()` (replace `*` with your driver name in **studly case**).
 
 ```php
-use AliYavari\IranSms\Drivers\YourNameDriver;
+use Mastertek\IranSms\Drivers\YourNameDriver;
 
 final class SmsManager extends Manager
 {

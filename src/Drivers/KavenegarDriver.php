@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Drivers;
+namespace Mastertek\IranSms\Drivers;
 
-use AliYavari\IranSms\Abstracts\Driver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
@@ -31,14 +31,15 @@ final class KavenegarDriver extends Driver
     public function __construct(
         private readonly string $token,
         private readonly string $from,
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}
      */
     public function credit(): int
     {
-        $response = Http::baseUrl($this->baseUrl.$this->credentials())
+        $response = Http::baseUrl($this->baseUrl . $this->credentials())
             ->withHeader('charset', 'utf-8')
             ->asForm()
             ->acceptJson()
@@ -166,11 +167,11 @@ final class KavenegarDriver extends Driver
      */
     private function execute(string $endpoint, array $data): void
     {
-        $response = Http::baseUrl($this->baseUrl.$this->credentials())
+        $response = Http::baseUrl($this->baseUrl . $this->credentials())
             ->withHeader('charset', 'utf-8')
             ->asForm()
             ->acceptJson()
-            ->post($endpoint.'.json', $data)
+            ->post($endpoint . '.json', $data)
             ->throw();
 
         $this->apiStatusCode = (int) $response->json('return.status');
@@ -178,7 +179,7 @@ final class KavenegarDriver extends Driver
 
     private function credentials(): string
     {
-        return '/'.$this->token;
+        return '/' . $this->token;
     }
 
     /**

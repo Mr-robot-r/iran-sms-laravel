@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit;
+namespace Mastertek\IranSms\Tests\Unit;
 
-use AliYavari\IranSms\Drivers\AmootSmsDriver;
-use AliYavari\IranSms\Drivers\AsanakDriver;
-use AliYavari\IranSms\Drivers\BehinPayamDriver;
-use AliYavari\IranSms\Drivers\FakeDriver;
-use AliYavari\IranSms\Drivers\FaraPayamakDriver;
-use AliYavari\IranSms\Drivers\FarazSmsDriver;
-use AliYavari\IranSms\Drivers\GhasedakDriver;
-use AliYavari\IranSms\Drivers\KavenegarDriver;
-use AliYavari\IranSms\Drivers\MedianaDriver;
-use AliYavari\IranSms\Drivers\MeliPayamakDriver;
-use AliYavari\IranSms\Drivers\PayamResanDriver;
-use AliYavari\IranSms\Drivers\RayganSmsDriver;
-use AliYavari\IranSms\Drivers\SmsIrDriver;
-use AliYavari\IranSms\Drivers\WebOneDriver;
-use AliYavari\IranSms\SmsManager;
-use AliYavari\IranSms\Tests\Fixtures\ConcreteTestDriver;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\AmootSmsDriver;
+use Mastertek\IranSms\Drivers\AsanakDriver;
+use Mastertek\IranSms\Drivers\BehinPayamDriver;
+use Mastertek\IranSms\Drivers\FakeDriver;
+use Mastertek\IranSms\Drivers\FaraPayamakDriver;
+use Mastertek\IranSms\Drivers\FarazSmsDriver;
+use Mastertek\IranSms\Drivers\GhasedakDriver;
+use Mastertek\IranSms\Drivers\KavenegarDriver;
+use Mastertek\IranSms\Drivers\MedianaDriver;
+use Mastertek\IranSms\Drivers\MeliPayamakDriver;
+use Mastertek\IranSms\Drivers\PayamResanDriver;
+use Mastertek\IranSms\Drivers\RayganSmsDriver;
+use Mastertek\IranSms\Drivers\SmsIrDriver;
+use Mastertek\IranSms\Drivers\WebOneDriver;
+use Mastertek\IranSms\SmsManager;
+use Mastertek\IranSms\Tests\Fixtures\ConcreteTestDriver;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Support\Facades\Config;
 use PHPUnit\Framework\Attributes\Test;
 
@@ -57,7 +57,7 @@ final class SmsManagerTest extends TestCase
     #[Test]
     public function it_always_returns_new_instance_of_sms_driver_class_for_immutability(): void
     {
-        $this->smsManager()->extend('test_driver', fn (): ConcreteTestDriver => new ConcreteTestDriver('123456', true));
+        $this->smsManager()->extend('test_driver', fn(): ConcreteTestDriver => new ConcreteTestDriver('123456', true));
 
         $instanceOne = $this->smsManager()->driver('test_driver');
         $instanceTwo = $this->smsManager()->driver('test_driver');

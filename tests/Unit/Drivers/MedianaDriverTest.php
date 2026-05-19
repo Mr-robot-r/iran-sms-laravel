@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\MedianaDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\MedianaDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -35,7 +35,7 @@ final class MedianaDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', [['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'sms_token')
+        Http::assertSent(fn(Request $request): bool => $request->hasHeader('Authorization', 'sms_token')
             && $request->hasHeader('Content-Type', 'application/json')
             && $request->url() === 'https://edge.ippanel.com/v1/api/send'
             && $request->method() === 'POST'
@@ -103,7 +103,7 @@ final class MedianaDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request['sending_type'] === 'normal'
+        Http::assertSent(fn(Request $request): bool => $request['sending_type'] === 'normal'
             && $request['from_number'] === '4567'
             && $request['message'] === 'Text message'
             && $request['params'] === ['recipients' => ['0913', '0914']]);
@@ -116,7 +116,7 @@ final class MedianaDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendPattern', [['0913', '0914'], 'pattern_code', ['key_1' => 'value_1', 'key_2' => 'value_2'], '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request['sending_type'] === 'pattern'
+        Http::assertSent(fn(Request $request): bool => $request['sending_type'] === 'pattern'
             && $request['from_number'] === '4567'
             && $request['code'] === 'pattern_code'
             && $request['recipients'] === ['0913', '0914']
@@ -150,10 +150,11 @@ final class MedianaDriverTest extends TestCase
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://edge.ippanel.com/v1/api/payment/credit/mine'
-                && $request->method() === 'GET'
-                && $request->hasHeader('Content-Type', 'application/json')
-                && $request->hasHeader('Authorization', 'sms_token')
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://edge.ippanel.com/v1/api/payment/credit/mine'
+            && $request->method() === 'GET'
+            && $request->hasHeader('Content-Type', 'application/json')
+            && $request->hasHeader('Authorization', 'sms_token')
         );
     }
 

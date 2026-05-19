@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Fixtures;
+namespace Mastertek\IranSms\Tests\Fixtures;
 
-use AliYavari\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Abstracts\Driver;
 
 /**
  * Test fixture class for the `Driver` abstract class.
@@ -19,7 +19,8 @@ final class ConcreteTestDriver extends Driver
     public function __construct(
         private readonly string $from,
         private readonly bool $successful,
-    ) {}
+    ) {
+    }
 
     public function credit(): int
     {

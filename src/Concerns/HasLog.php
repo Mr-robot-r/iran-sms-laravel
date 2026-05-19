@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Concerns;
+namespace Mastertek\IranSms\Concerns;
 
-use AliYavari\IranSms\Enums\Type;
-use AliYavari\IranSms\Models\SmsLog;
+use Mastertek\IranSms\Enums\Type;
+use Mastertek\IranSms\Models\SmsLog;
 use Illuminate\Support\Str;
 use ReflectionClass;
 
@@ -14,7 +14,7 @@ use ReflectionClass;
  *
  * Handles logging operations related to SMS sending.
  * Provides implementations for log methods defined in the
- * \AliYavari\IranSms\Contracts\Sms interface.
+ * \Mastertek\IranSms\Contracts\Sms interface.
  *
  * Core Method:
  * - handleLog(): Handle SMS log operation.
@@ -93,7 +93,7 @@ trait HasLog
      */
     final public function logSuccessful(): static
     {
-        if (! isset($this->typesToLog)) {
+        if (!isset($this->typesToLog)) {
             $this->log(true);
         }
 
@@ -107,7 +107,7 @@ trait HasLog
      */
     final public function logFailed(): static
     {
-        if (! isset($this->typesToLog)) {
+        if (!isset($this->typesToLog)) {
             $this->log(true);
         }
 
@@ -134,17 +134,17 @@ trait HasLog
      */
     private function handleLog(): void
     {
-        if (! isset($this->typesToLog) || $this->typesToLog === []) {
+        if (!isset($this->typesToLog) || $this->typesToLog === []) {
             return;
         }
 
-        if (! in_array($this->type, $this->typesToLog, strict: true)) {
+        if (!in_array($this->type, $this->typesToLog, strict: true)) {
             return;
         }
 
         $statusText = $this->successful() ? 'successful' : 'failed';
 
-        if (! in_array($statusText, $this->statusesToLog, strict: true)) {
+        if (!in_array($statusText, $this->statusesToLog, strict: true)) {
             return;
         }
 
@@ -175,8 +175,8 @@ trait HasLog
     private function serializeContent(): array
     {
         return is_string($this->content)
-        ? ['message' => $this->content]
-        : ['code' => $this->patternCode, 'variables' => $this->content];
+            ? ['message' => $this->content]
+            : ['code' => $this->patternCode, 'variables' => $this->content];
     }
 
     /**
@@ -196,6 +196,6 @@ trait HasLog
     {
         $this->typesToLog ??= [];
 
-        $this->typesToLog = collect($this->typesToLog)->reject(fn (Type $value): bool => $value === $type)->all();
+        $this->typesToLog = collect($this->typesToLog)->reject(fn(Type $value): bool => $value === $type)->all();
     }
 }

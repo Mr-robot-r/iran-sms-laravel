@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Drivers;
+namespace Mastertek\IranSms\Drivers;
 
-use AliYavari\IranSms\Abstracts\Driver;
-use AliYavari\IranSms\Dtos\MockResponse;
+use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Dtos\MockResponse;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Http;
  */
 final class FakeDriver extends Driver
 {
-    public function __construct(private readonly MockResponse $response) {}
+    public function __construct(private readonly MockResponse $response)
+    {
+    }
 
     /**
      * {@inheritdoc}

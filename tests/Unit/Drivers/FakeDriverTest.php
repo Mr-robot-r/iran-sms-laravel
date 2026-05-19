@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\FakeDriver;
-use AliYavari\IranSms\Dtos\MockResponse;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\FakeDriver;
+use Mastertek\IranSms\Dtos\MockResponse;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;

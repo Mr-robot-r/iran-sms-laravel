@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Abstracts;
+namespace Mastertek\IranSms\Tests\Unit\Abstracts;
 
-use AliYavari\IranSms\Exceptions\SmsContentNotDefinedException;
-use AliYavari\IranSms\Exceptions\SmsIsImmutableException;
-use AliYavari\IranSms\Exceptions\SmsNotSentYetException;
-use AliYavari\IranSms\Models\SmsLog;
-use AliYavari\IranSms\Tests\Fixtures\ConcreteTestDriver;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Exceptions\SmsContentNotDefinedException;
+use Mastertek\IranSms\Exceptions\SmsIsImmutableException;
+use Mastertek\IranSms\Exceptions\SmsNotSentYetException;
+use Mastertek\IranSms\Models\SmsLog;
+use Mastertek\IranSms\Tests\Fixtures\ConcreteTestDriver;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Collection;
 use PHPUnit\Framework\Attributes\Test;

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Facades;
+namespace Mastertek\IranSms\Facades;
 
-use AliYavari\IranSms\Drivers\FakeDriver;
-use AliYavari\IranSms\Dtos\MockResponse;
-use AliYavari\IranSms\SmsManager;
+use Mastertek\IranSms\Drivers\FakeDriver;
+use Mastertek\IranSms\Dtos\MockResponse;
+use Mastertek\IranSms\SmsManager;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Facade;
@@ -15,14 +15,14 @@ use UnexpectedValueException;
 
 /**
  * @method static int credit() Get SMS provider credit balance in Rials
- * @method static \AliYavari\IranSms\Contracts\Sms driver(string $driver = null) Get SMS instance for sending by specified driver
- * @method static \AliYavari\IranSms\Contracts\Sms provider(string $provider = null) Get SMS instance for sending by specified provider
- * @method static \AliYavari\IranSms\Contracts\Sms otp(string $phone, string $message) Create OTP SMS instance.
- * @method static \AliYavari\IranSms\Contracts\Sms pattern(string|list<string> $phones, string $patternCode, array<mixed> $variables) Create Pattern SMS instance
- * @method static \AliYavari\IranSms\Contracts\Sms text(string|list<string> $phones, string $message) Create regular text SMS instance
- * @method static \AliYavari\IranSms\Contracts\Sms from(string $from) Set the sender number for the SMS
+ * @method static \Mastertek\IranSms\Contracts\Sms driver(string $driver = null) Get SMS instance for sending by specified driver
+ * @method static \Mastertek\IranSms\Contracts\Sms provider(string $provider = null) Get SMS instance for sending by specified provider
+ * @method static \Mastertek\IranSms\Contracts\Sms otp(string $phone, string $message) Create OTP SMS instance.
+ * @method static \Mastertek\IranSms\Contracts\Sms pattern(string|list<string> $phones, string $patternCode, array<mixed> $variables) Create Pattern SMS instance
+ * @method static \Mastertek\IranSms\Contracts\Sms text(string|list<string> $phones, string $message) Create regular text SMS instance
+ * @method static \Mastertek\IranSms\Contracts\Sms from(string $from) Set the sender number for the SMS
  *
- * @see \AliYavari\IranSms\Abstracts\Driver
+ * @see \Mastertek\IranSms\Abstracts\Driver
  */
 final class Sms extends Facade
 {
@@ -85,7 +85,7 @@ final class Sms extends Facade
     private static function validateFakeSetupInputs(array $drivers, ?MockResponse $response): void
     {
         if (Arr::isAssoc($drivers)) {
-            if (! is_null($response)) {
+            if (!is_null($response)) {
                 throw new InvalidArgumentException(
                     'Invalid fake setup: you cannot provide both a global mock response and per-provider responses at the same time.'
                 );
@@ -114,7 +114,7 @@ final class Sms extends Facade
         if (Arr::isList($drivers)) {
             $response ??= self::successfulRequest();
 
-            $drivers = Arr::mapWithKeys($drivers, fn (string $value): array => [$value => $response]);
+            $drivers = Arr::mapWithKeys($drivers, fn(string $value): array => [$value => $response]);
         }
 
         return collect($drivers);

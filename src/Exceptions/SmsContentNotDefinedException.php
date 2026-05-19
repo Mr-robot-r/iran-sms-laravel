@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Exceptions;
+namespace Mastertek\IranSms\Exceptions;
 
 use LogicException;
 
@@ -11,4 +11,6 @@ use LogicException;
  *
  * Exception thrown when attempting to send an SMS without setting its content.
  */
-final class SmsContentNotDefinedException extends LogicException {}
+final class SmsContentNotDefinedException extends LogicException
+{
+}

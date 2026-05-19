@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Fixtures;
+namespace Mastertek\IranSms\Tests\Fixtures;
 
-use AliYavari\IranSms\Concerns\HasLog;
-use AliYavari\IranSms\Enums\Type;
+use Mastertek\IranSms\Concerns\HasLog;
+use Mastertek\IranSms\Enums\Type;
 
 /**
  * Test fixture class for the `HasLog` trait.
@@ -25,7 +25,8 @@ final class HasLogTestDriver
         private readonly bool $successful,
         private readonly ?string $error,
         private readonly string $sender,
-    ) {}
+    ) {
+    }
 
     public function successful(): bool
     {

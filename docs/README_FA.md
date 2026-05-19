@@ -150,7 +150,7 @@ SMS_TREZ_FROM=<your_sender_number>
 برای ایجاد یک پیامک می توانید از کلاس Facade این پکیج استفاده کنید:
 
 ```php
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Facades\Sms;
 
 // با استفاده از ارائه‌دهنده پیش‌فرض
 $sms = Sms::otp(string $phone, string $message);
@@ -241,7 +241,7 @@ $sms->error();      // string|null
 بر ای مشاهده اعتبار حساب (بر حسب ریال):
 
 ```php
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Facades\Sms;
 
 // ارائه‌دهنده پیش‌فرض
 $credit = Sms::credit();                                // int
@@ -256,7 +256,7 @@ $credit = Sms::provider(string $provider)->credit();    // int
 
 ### صف‌ها
 
-برای ارسال یک پیامک با استفاده از \[صف‌ها (queues)]، می‌توانید [یک نمونه پیامک ایجاد کنید](#ایجاد-پیامک) و آن را به یک job ارسال کنید که در آن متد `send()` را فراخوانی می‌کنید. می‌توانید از اینترفیس `AliYavari\IranSms\Contracts\Sms` به عنوان type-hint در استفاده کنید.
+برای ارسال یک پیامک با استفاده از \[صف‌ها (queues)]، می‌توانید [یک نمونه پیامک ایجاد کنید](#ایجاد-پیامک) و آن را به یک job ارسال کنید که در آن متد `send()` را فراخوانی می‌کنید. می‌توانید از اینترفیس `Mastertek\IranSms\Contracts\Sms` به عنوان type-hint در استفاده کنید.
 
 **نکته:** توصیه می‌شود تنظیمات مربوط به لاگ را در همین‌جا پیکربندی کنید تا کد شما تمیز و منسجم باقی بماند.
 
@@ -265,7 +265,7 @@ $credit = Sms::provider(string $provider)->credit();    // int
 ```php
 namespace App\Jobs;
 
-use AliYavari\IranSms\Contracts\Sms;
+use Mastertek\IranSms\Contracts\Sms;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -290,7 +290,7 @@ final class SendSms implements ShouldQueue
 
 ### نوتیفیکیشن‌ها
 
-برای ارسال پیامک با استفاده از \[Notificationها]، یک متد `toSms` در کلاس نوتیفیکیشن خود تعریف کرده و یک نمونه پیامک بازگردانید. همچنین، کانال `AliYavari\IranSms\Channels\SmsChannel` را در متد `via` قرار دهید.
+برای ارسال پیامک با استفاده از \[Notificationها]، یک متد `toSms` در کلاس نوتیفیکیشن خود تعریف کرده و یک نمونه پیامک بازگردانید. همچنین، کانال `Mastertek\IranSms\Channels\SmsChannel` را در متد `via` قرار دهید.
 
 **نکته:** متد `toSms` باید یک نمونه از کلاس پیامک (SMS) را همراه با تنظیمات لاگ (در صورت نیاز) بازگرداند. این کانال مسئول ارسال پیامک خواهد بود.
 
@@ -299,8 +299,8 @@ final class SendSms implements ShouldQueue
 ```php
 namespace App\Notifications;
 
-use AliYavari\IranSms\Channels\SmsChannel;
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Channels\SmsChannel;
+use Mastertek\IranSms\Facades\Sms;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 

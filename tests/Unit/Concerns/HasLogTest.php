@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Concerns;
+namespace Mastertek\IranSms\Tests\Unit\Concerns;
 
-use AliYavari\IranSms\Concerns\HasLog;
-use AliYavari\IranSms\Enums\Type;
-use AliYavari\IranSms\Models\SmsLog;
-use AliYavari\IranSms\Tests\Fixtures\HasLogTestDriver;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Concerns\HasLog;
+use Mastertek\IranSms\Enums\Type;
+use Mastertek\IranSms\Models\SmsLog;
+use Mastertek\IranSms\Tests\Fixtures\HasLogTestDriver;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Support\Collection;
 use Mockery;
 use PHPUnit\Framework\Attributes\Test;

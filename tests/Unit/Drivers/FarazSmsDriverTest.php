@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Drivers;
+namespace Mastertek\IranSms\Tests\Unit\Drivers;
 
-use AliYavari\IranSms\Drivers\FarazSmsDriver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Drivers\FarazSmsDriver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
@@ -36,7 +36,7 @@ final class FarazSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($smsDriver, 'execute', ['end-point', ['key' => 'value']]);
 
-        Http::assertSent(fn (Request $request): bool => $request->hasHeader('Api-Key', 'sms_token')
+        Http::assertSent(fn(Request $request): bool => $request->hasHeader('Api-Key', 'sms_token')
             && $request->hasHeader('Content-Type', 'application/json')
             && $request->url() === 'https://api.iranpayamak.com/ws/v1/end-point'
             && $request->method() === 'POST'
@@ -100,7 +100,7 @@ final class FarazSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendText', [['0913', '0914'], 'Text message', '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/sms/simple'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/sms/simple'
             && $request['number_format'] === 'english'
             && $request['schedule'] === null
             && $request['line_number'] === '4567'
@@ -115,7 +115,7 @@ final class FarazSmsDriverTest extends TestCase
 
         $this->callProtectedMethod($this->driver(), 'sendPattern', [['0913'], 'pattern_code', ['key_1' => 'value_1', 'key_2' => 'value_2'], '4567']);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/sms/pattern'
+        Http::assertSent(fn(Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/sms/pattern'
             && $request['number_format'] === 'english'
             && $request['schedule'] === null
             && $request['line_number'] === '4567'
@@ -154,30 +154,33 @@ final class FarazSmsDriverTest extends TestCase
     #[Test]
     public function it_returns_credit_successfully(): void
     {
-        Http::fake(['*' => Http::response([
-            'status' => 'success',
-            'message' => null,
-            'data' => [
-                'balanceAmount' => 1000,
-                'balanceCount' => 25,
-                'details' => [
-                    [
-                        'count' => 25,
-                        'rate' => 200,
-                        'amount' => 2000,
+        Http::fake([
+            '*' => Http::response([
+                'status' => 'success',
+                'message' => null,
+                'data' => [
+                    'balanceAmount' => 1000,
+                    'balanceCount' => 25,
+                    'details' => [
+                        [
+                            'count' => 25,
+                            'rate' => 200,
+                            'amount' => 2000,
+                        ],
                     ],
                 ],
-            ],
-        ])]);
+            ])
+        ]);
 
         $credit = $this->driver()->credit();
 
         $this->assertSame(1000, $credit);
 
-        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/account/balance'
-                && $request->method() === 'GET'
-                && $request->hasHeader('Content-Type', 'application/json')
-                && $request->hasHeader('Api-Key', 'sms_token')
+        Http::assertSent(
+            fn(Request $request): bool => $request->url() === 'https://api.iranpayamak.com/ws/v1/account/balance'
+            && $request->method() === 'GET'
+            && $request->hasHeader('Content-Type', 'application/json')
+            && $request->hasHeader('Api-Key', 'sms_token')
         );
     }
 

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Drivers;
+namespace Mastertek\IranSms\Drivers;
 
-use AliYavari\IranSms\Abstracts\Driver;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
-use AliYavari\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -29,7 +29,8 @@ final class AmootSmsDriver extends Driver
     public function __construct(
         private readonly string $token,
         private readonly string $from,
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}

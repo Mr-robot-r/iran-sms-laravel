@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Drivers;
+namespace Mastertek\IranSms\Drivers;
 
-use AliYavari\IranSms\Abstracts\Driver;
-use AliYavari\IranSms\Exceptions\InvalidPatternStructureException;
-use AliYavari\IranSms\Exceptions\UnsupportedMethodException;
+use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 

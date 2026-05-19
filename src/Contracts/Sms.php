@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Contracts;
+namespace Mastertek\IranSms\Contracts;
 
 /**
  * Public API for interacting with the amyavari/iran-sms-laravel package

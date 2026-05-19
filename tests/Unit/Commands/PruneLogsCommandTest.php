@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests\Unit\Commands;
+namespace Mastertek\IranSms\Tests\Unit\Commands;
 
-use AliYavari\IranSms\Enums\Type;
-use AliYavari\IranSms\Models\SmsLog;
-use AliYavari\IranSms\Tests\TestCase;
+use Mastertek\IranSms\Enums\Type;
+use Mastertek\IranSms\Models\SmsLog;
+use Mastertek\IranSms\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;

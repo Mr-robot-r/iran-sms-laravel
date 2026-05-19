@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Tests;
+namespace Mastertek\IranSms\Tests;
 
-use AliYavari\IranSms\IranSmsServiceProvider;
+use Mastertek\IranSms\IranSmsServiceProvider;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Orchestra\Testbench\TestCase as Orchestra;
@@ -36,7 +36,7 @@ abstract class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
 
-        $migrations = File::allFiles(__DIR__.'/../database/migrations');
+        $migrations = File::allFiles(__DIR__ . '/../database/migrations');
 
         foreach ($migrations as $migration) {
             (include $migration->getRealPath())->up();

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Enums;
+namespace Mastertek\IranSms\Enums;
 
 /**
  * @internal

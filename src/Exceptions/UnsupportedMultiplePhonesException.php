@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace AliYavari\IranSms\Exceptions;
+namespace Mastertek\IranSms\Exceptions;
 
 use LogicException;
 

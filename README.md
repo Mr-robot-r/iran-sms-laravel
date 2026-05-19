@@ -164,7 +164,7 @@ SMS_TREZ_FROM=<your_sender_number>
 You can create an SMS instance using the facade provided by the package:
 
 ```php
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Facades\Sms;
 
 // Using the default provider
 $sms = Sms::otp(string $phone, string $message);
@@ -261,7 +261,7 @@ $sms->error();      // string|null
 To Retrieve your current credit balance (in Rials):
 
 ```php
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Facades\Sms;
 
 // Default provider credit balance
 $credit = Sms::credit();                                // int
@@ -276,7 +276,7 @@ $credit = Sms::provider(string $provider)->credit();    // int
 
 ### Queues
 
-To send an SMS instance using [queues], you can [create an SMS instance](#creating-an-sms-instance) and dispatch it to a job where you call the `send()` method. You can use the `AliYavari\IranSms\Contracts\Sms` interface as a constructor type-hint.
+To send an SMS instance using [queues], you can [create an SMS instance](#creating-an-sms-instance) and dispatch it to a job where you call the `send()` method. You can use the `Mastertek\IranSms\Contracts\Sms` interface as a constructor type-hint.
 
 **Note:** It's recommended to configure log options here to keep your code clean and consistent.
 
@@ -285,7 +285,7 @@ Example:
 ```php
 namespace App\Jobs;
 
-use AliYavari\IranSms\Contracts\Sms;
+use Mastertek\IranSms\Contracts\Sms;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -310,7 +310,7 @@ final class SendSms implements ShouldQueue
 
 ### Notifications
 
-To send SMS using [notifications], define a `toSms` method in your notification class and return an SMS instance. Also, include `AliYavari\IranSms\Channels\SmsChannel` in the `via` method.
+To send SMS using [notifications], define a `toSms` method in your notification class and return an SMS instance. Also, include `Mastertek\IranSms\Channels\SmsChannel` in the `via` method.
 
 **Note:** The `toSms` method must return an SMS instance with your log setup (if desired). The channel will handle sending it.
 
@@ -319,8 +319,8 @@ Example:
 ```php
 namespace App\Notifications;
 
-use AliYavari\IranSms\Channels\SmsChannel;
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Channels\SmsChannel;
+use Mastertek\IranSms\Facades\Sms;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
 
@@ -351,7 +351,7 @@ final class MyNotification extends Notification
 This package provides fluent methods to fake and test SMS sending:
 
 ```php
-use AliYavari\IranSms\Facades\Sms;
+use Mastertek\IranSms\Facades\Sms;
 
 /**
  * Fake the default provider to return successful response
