@@ -28,6 +28,11 @@ final class KavenegarDriver extends Driver
      */
     private int $apiStatusCode;
 
+    /**
+     * The response message
+     */
+    private string $apiMessage;
+
     public function __construct(
         private readonly string $token,
         private readonly string $from,
@@ -45,6 +50,8 @@ final class KavenegarDriver extends Driver
             ->acceptJson()
             ->get('account/info.json')
             ->throw();
+
+        $this->processResponse($response);
 
         return (int) $response->json('entries.remaincredit');
     }
@@ -76,7 +83,6 @@ final class KavenegarDriver extends Driver
     protected function sendPattern(array $phones, string $patternCode, array $variables, string $from): static
     {
         $this->validatePatternPhones($phones);
-
         $this->validatePatternVariables($variables);
 
         $data = array_merge([
@@ -118,51 +124,115 @@ final class KavenegarDriver extends Driver
      */
     protected function getErrorMessage(): string
     {
-        return match ($this->apiStatusCode) {
-            400 => 'پارامترها ناقص هستند',
-            401 => 'حساب کاربری غیرفعال شده است',
-            402 => 'عملیات ناموفق بود',
-            403 => 'کد شناسائی API-Key معتبر نمی‌باشد',
-            404 => 'متد نامشخص است',
-            405 => 'متد Get/Post اشتباه است',
-            406 => 'پارامترهای اجباری خالی ارسال شده اند',
-            407 => 'دسترسی به اطلاعات مورد نظر برای شما امکان پذیر نیست',
-            409 => 'سرور قادر به پاسخگوئی نیست بعدا تلاش کنید',
-            411 => 'دریافت کننده نامعتبر است',
-            412 => 'ارسال کننده نامعتبر است',
-            413 => 'پیام خالی است و یا طول پیام بیش از حد مجاز می‌باشد. حداکثر طول کل متن پیامک 900 کاراکتر می باشد',
-            414 => 'حجم درخواست بیشتر از حد مجاز است ،ارسال پیامک :هر فراخوانی حداکثر 200 رکورد و کنترل وضعیت :هر فراخوانی 500 رکورد',
-            415 => 'اندیس شروع بزرگ تر از کل تعداد شماره های مورد نظر است',
-            416 => 'IP سرویس مبدا با تنظیمات مطابقت ندارد',
-            417 => 'تاریخ ارسال اشتباه است و فرمت آن صحیح نمی باشد.',
-            418 => 'اعتبار شما کافی نمی‌باشد',
-            419 => 'طول آرایه متن و گیرنده و فرستنده هم اندازه نیست',
-            420 => 'استفاده از لینک در متن پیام برای شما محدود شده است',
-            422 => 'داده ها به دلیل وجود کاراکتر نامناسب قابل پردازش نیست',
-            424 => 'الگوی مورد نظر پیدا نشد',
-            426 => 'استفاده از این متد نیازمند سرویس پیشرفته می‌باشد',
-            427 => 'استفاده از این خط نیازمند ایجاد سطح دسترسی می باشد',
-            428 => 'ارسال کد از طریق تماس تلفنی امکان پذیر نیست',
-            429 => 'IP محدود شده است',
-            431 => 'ساختار کد صحیح نمی‌باشد',
-            432 => 'پارامتر کد در متن پیام پیدا نشد',
-            451 => 'فراخوانی بیش از حد در بازه زمانی مشخص IP محدود شده',
-            501 => 'فقط امکان ارسال پیام تست به شماره صاحب حساب کاربری وجود دارد',
-            default => "خطای ناشناخته با کد {$this->apiStatusCode} رخ داده است"
-        };
+        return $this->apiMessage ?: $this->getErrorMessageByCode();
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function getErrorCode(): int
+    protected function getErrorCode(): string|int
     {
         return $this->apiStatusCode;
     }
 
+    // ==================== متدهای مورد نیاز Driver (گروه و مخاطب) ====================
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function createGroup(string $name, ?string $description = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'createGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function editGroup(string $groupId, string $name, ?string $description = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'editGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function deleteGroup(string $groupId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'deleteGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getGroups(): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getGroups');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function addContact(array $contact): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'addContact');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getContacts');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function deleteContact(string $contactId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'deleteContact');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getContactsCount(string $groupId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getContactsCount');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'sendToGroup');
+    }
+
+    // ==================== متدهای خصوصی ====================
+
     /**
      * Executes the API request to the specified endpoint with given data.
      *
+     * @param  string  $endpoint
      * @param  array<string, mixed>  $data
      */
     private function execute(string $endpoint, array $data): void
@@ -174,7 +244,26 @@ final class KavenegarDriver extends Driver
             ->post($endpoint . '.json', $data)
             ->throw();
 
+        $this->processResponse($response);
+    }
+
+    private function processResponse($response): void
+    {
         $this->apiStatusCode = (int) $response->json('return.status');
+        $this->apiMessage = $response->json('return.message') ?? '';
+
+        if ($this->isSuccessful()) {
+            $entries = $response->json('entries') ?? [];
+            $entry = is_array($entries) && isset($entries[0]) ? $entries[0] : $entries;
+
+            if (isset($entry['messageid'])) {
+                $this->setMessageId((string) $entry['messageid']);
+            }
+
+            if (isset($entry['cost'])) {
+                $this->setSuccessCount(is_array($entries) ? count($entries) : 1);
+            }
+        }
     }
 
     private function credentials(): string
@@ -186,8 +275,6 @@ final class KavenegarDriver extends Driver
      * Transforms phones into the API's expected phone structure.
      *
      * @param  list<string>  $phones
-     *
-     * @example - ['0913', '0914'] becomes "0913,0914"
      */
     private function toApiPhones(array $phones): string
     {
@@ -204,7 +291,6 @@ final class KavenegarDriver extends Driver
         if (count($phones) !== 1) {
             throw UnsupportedMultiplePhonesException::make($this->getDriverName(), method: 'pattern');
         }
-
     }
 
     /**
@@ -219,5 +305,41 @@ final class KavenegarDriver extends Driver
                 sprintf('Provider "%s" only accepts pattern data as key-value pairs.', $this->getDriverName())
             );
         }
+    }
+
+    private function getErrorMessageByCode(): string
+    {
+        return match ($this->apiStatusCode) {
+            400 => 'پارامترها ناقص هستند',
+            401 => 'حساب کاربری غیرفعال شده است',
+            402 => 'عملیات ناموفق بود',
+            403 => 'کد شناسائی API-Key معتبر نمی‌باشد',
+            404 => 'متد نامشخص است',
+            405 => 'متد Get/Post اشتباه است',
+            406 => 'پارامترهای اجباری خالی ارسال شده اند',
+            407 => 'دسترسی به اطلاعات مورد نظر برای شما امکان پذیر نیست',
+            409 => 'سرور قادر به پاسخگوئی نیست بعدا تلاش کنید',
+            411 => 'دریافت کننده نامعتبر است',
+            412 => 'ارسال کننده نامعتبر است',
+            413 => 'پیام خالی است و یا طول پیام بیش از حد مجاز می‌باشد',
+            414 => 'حجم درخواست بیشتر از حد مجاز است',
+            415 => 'اندیس شروع بزرگ تر از کل تعداد شماره های مورد نظر است',
+            416 => 'IP سرویس مبدا با تنظیمات مطابقت ندارد',
+            417 => 'تاریخ ارسال اشتباه است',
+            418 => 'اعتبار شما کافی نمی‌باشد',
+            419 => 'طول آرایه متن و گیرنده و فرستنده هم اندازه نیست',
+            420 => 'استفاده از لینک در متن پیام برای شما محدود شده است',
+            422 => 'داده ها به دلیل وجود کاراکتر نامناسب قابل پردازش نیست',
+            424 => 'الگوی مورد نظر پیدا نشد',
+            426 => 'استفاده از این متد نیازمند سرویس پیشرفته می‌باشد',
+            427 => 'استفاده از این خط نیازمند ایجاد سطح دسترسی می باشد',
+            428 => 'ارسال کد از طریق تماس تلفنی امکان پذیر نیست',
+            429 => 'IP محدود شده است',
+            431 => 'ساختار کد صحیح نمی‌باشد',
+            432 => 'پارامتر کد در متن پیام پیدا نشد',
+            451 => 'فراخوانی بیش از حد در بازه زمانی مشخص IP محدود شده',
+            501 => 'فقط امکان ارسال پیام تست به شماره صاحب حساب کاربری وجود دارد',
+            default => "خطای ناشناخته با کد {$this->apiStatusCode} رخ داده است"
+        };
     }
 }

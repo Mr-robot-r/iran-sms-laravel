@@ -55,6 +55,18 @@ abstract class Driver implements Sms
     private bool $isSent = false;
 
     /**
+     * Message ID for tracking (optional)
+     */
+    private ?string $messageId = null;
+
+    /**
+     * Success count for bulk sending
+     */
+    private int $successCount = 0;
+
+    // ==================== متدهای انتزاعی اصلی ====================
+
+    /**
      * {@inheritdoc}
      */
     abstract public function credit(): int;
@@ -98,6 +110,149 @@ abstract class Driver implements Sms
      * Get the error code if SMS sending failed
      */
     abstract protected function getErrorCode(): string|int;
+
+    // ==================== متدهای جدید مدیریت گروه و مخاطب ====================
+
+    /**
+     * Create a new group
+     * 
+     * @param string $name Group name
+     * @param string|null $description Group description (optional)
+     * @return array{success: bool, group_id: string|null, message: string}
+     */
+    abstract public function createGroup(string $name, ?string $description = null): array;
+
+    /**
+     * Edit an existing group
+     * 
+     * @param string $groupId Group ID
+     * @param string $name New group name
+     * @param string|null $description New group description (optional)
+     * @return array{success: bool, message: string}
+     */
+    abstract public function editGroup(string $groupId, string $name, ?string $description = null): array;
+
+    /**
+     * Delete a group
+     * 
+     * @param string $groupId Group ID
+     * @return array{success: bool, message: string}
+     */
+    abstract public function deleteGroup(string $groupId): array;
+
+    /**
+     * Get all groups list
+     * 
+     * @return array{success: bool, groups: array, message: string}
+     */
+    abstract public function getGroups(): array;
+
+    /**
+     * Add a new contact
+     * 
+     * @param array{
+     *     first_name?: string,
+     *     last_name?: string,
+     *     mobile: string,
+     *     email?: string,
+     *     group_id: string,
+     *     corporation?: string,
+     *     phone?: string,
+     *     address?: string,
+     *     gender?: int
+     * } $contact Contact data
+     * @return array{success: bool, contact_id: string|null, message: string}
+     */
+    abstract public function addContact(array $contact): array;
+
+    /**
+     * Get contacts list
+     * 
+     * @param string|null $groupId Filter by group ID (optional)
+     * @param int $page Page number
+     * @param int $perPage Items per page
+     * @return array{success: bool, contacts: array, total: int, message: string}
+     */
+    abstract public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array;
+
+    /**
+     * Delete a contact
+     * 
+     * @param string $contactId Contact ID
+     * @return array{success: bool, message: string}
+     */
+    abstract public function deleteContact(string $contactId): array;
+
+    /**
+     * Get contacts count in a group
+     * 
+     * @param string $groupId Group ID
+     * @return array{success: bool, count: int, message: string}
+     */
+    abstract public function getContactsCount(string $groupId): array;
+
+    /**
+     * Send SMS to a specific group
+     * 
+     * @param string $groupId Group ID
+     * @param string $message Message content
+     * @param string|null $from Sender number (optional)
+     * @return array{success: bool, message_id: string|null, success_count: int, error?: string}
+     */
+    abstract public function sendToGroup(string $groupId, string $message, ?string $from = null): array;
+
+    // ==================== متدهای کمکی (اختیاری) ====================
+
+    /**
+     * Set message ID (called by drivers)
+     */
+    protected function setMessageId(?string $id): static
+    {
+        $this->messageId = $id;
+        return $this;
+    }
+
+    /**
+     * Set success count (called by drivers)
+     */
+    protected function setSuccessCount(int $count): static
+    {
+        $this->successCount = $count;
+        return $this;
+    }
+
+    /**
+     * Get message ID after sending
+     */
+    public function getMessageId(): ?string
+    {
+        return $this->messageId;
+    }
+
+    /**
+     * Get success count after bulk sending
+     */
+    public function getSuccessCount(): int
+    {
+        return $this->successCount;
+    }
+
+    /**
+     * Get full result array
+     * 
+     * @return array{success: bool, message_id: string|null, success_count: int, error: string|null}
+     */
+    public function getResult(): array
+    {
+        return [
+            'success' => $this->isSuccessful(),
+            'message_id' => $this->getMessageId(),
+            'success_count' => $this->getSuccessCount(),
+            'error' => $this->error(),
+        ];
+    }
+
+    // ==================== متدهای قبلی (دست نخورده) ====================
 
     /**
      * {@inheritdoc}
@@ -180,7 +335,7 @@ abstract class Driver implements Sms
 
         $this->isSent = true;
 
-        $this->handleLog(); // `HasLog` trait
+        $this->handleLog();
 
         return $this;
     }
