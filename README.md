@@ -30,13 +30,13 @@ To view the Persian documentation, please refer to [README_FA.md](./docs/README_
 | Kavenegar          | کاوه نگار          | [kavenegar.com]   | `kavenegar`    | 1.0.0   |
 | Faraz SMS          | فراز اس ام اس      | [farazsms.com]    | `faraz_sms`    | 1.0.0   |
 | Raygan SMS         | رایگان اس ام اس    | [raygansms.com]   | `raygan_sms`   | 1.0.0   |
-| Web One SMS        | وب وان             | [webone-sms.com]  | `web_one`      | 1.1.0   |
-| Amoot SMS          | پیامک آموت         | [amootsms.com]    | `amoot_sms`    | 1.1.0   |
-| Fara Payamak       | فراپیامک           | [farapayamak.ir]  | `fara_payamak` | 1.2.0   |
-| Ghasedak           | قاصدک              | [ghasedak.me]     | `ghasedak`     | 1.2.0   |
-| Behin Payam        | بهین پیام          | [behinpayam.com]  | `behin_payam`  | 1.2.0   |
-| Asanak             | آسانک              | [asanak.com]      | `asanak`       | 1.2.0   |
-| Mediana            | مدیانا             | [mediana.ir]      | `mediana`      | 1.5.0   |
+| Web One SMS        | وب وان             | [webone-sms.com]  | `web_one`      | 1.0.0   |
+| Amoot SMS          | پیامک آموت         | [amootsms.com]    | `amoot_sms`    | 1.0.0   |
+| Fara Payamak       | فراپیامک           | [farapayamak.ir]  | `fara_payamak` | 1.0.0   |
+| Ghasedak           | قاصدک              | [ghasedak.me]     | `ghasedak`     | 1.0.0   |
+| Asanak             | آسانک              | [asanak.com]      | `asanak`       | 1.0.0   |
+| Mediana            | مدیانا             | [mediana.ir]      | `mediana`      | 1.0.0   |
+| ParsGreen            | پارس گرین             | [http://parsgreen.ir/]      | `parsgreen`      | 1.0.0   |
 
 > [!CAUTION]
 > Providers have different rules for sending SMS messages. Please check [providers_note_en.md](./docs/providers_note_en.md).
@@ -62,7 +62,7 @@ To view the Persian documentation, please refer to [README_FA.md](./docs/README_
 To install the package via Composer, run:
 
 ```bash
-composer require amyavari/iran-sms-laravel
+composer require mastertek/iran-sms-laravel
 ```
 
 ## Publish Vendor Files
