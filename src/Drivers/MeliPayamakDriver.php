@@ -55,7 +55,15 @@ final class MelipayamakDriver extends Driver
     ) {
     }
 
-    // ==================== متدهای اصلی ====================
+    /**
+     * Get driver name for exceptions
+     */
+    private function getDriverName(): string
+    {
+        return 'Melipayamak';
+    }
+
+    // ==================== متدهای اجباری کلاس Driver ====================
 
     /**
      * {@inheritdoc}
@@ -156,11 +164,352 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * دریافت وضعیت تحویل پیامک
-     * متد IsDelivered
-     * 
-     * @param string|array $recId شناسه پیامک
-     * @return array{success: bool, delivered: bool|null, message: string}
+     * {@inheritdoc}
+     */
+    protected function isSuccessful(): bool
+    {
+        return $this->apiStatusCode === 200 && (is_numeric($this->returnValue) || $this->returnValue === 'true');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getErrorMessage(): string
+    {
+        return $this->apiMessage ?: 'خطا در ارتباط با سرور';
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getErrorCode(): string|int
+    {
+        return $this->apiStatusCode;
+    }
+
+    // ==================== متدهای مدیریت گروه (اجباری کلاس Driver) ====================
+
+    /**
+     * {@inheritdoc}
+     * ایجاد گروه جدید - متد addGroup
+     */
+    public function createGroup(string $name, ?string $description = null): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'groupName' => $name,
+            'Descriptions' => $description ?? '',
+            'ShowToChilds' => false,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('AddGroup', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'group_id' => (string) $this->returnValue,
+                'message' => 'گروه با موفقیت ایجاد شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'group_id' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws UnsupportedMethodException
+     */
+    public function editGroup(string $groupId, string $name, ?string $description = null): array
+    {
+        throw new UnsupportedMethodException(
+            sprintf('Provider "%s" does not support editGroup method.', $this->getDriverName())
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @throws UnsupportedMethodException
+     */
+    public function deleteGroup(string $groupId): array
+    {
+        throw new UnsupportedMethodException(
+            sprintf('Provider "%s" does not support deleteGroup method.', $this->getDriverName())
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت لیست گروه‌ها - متد getGroups
+     */
+    public function getGroups(): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('GetGroups', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $groups = json_decode($this->returnValue, true) ?? [];
+            $formattedGroups = array_map(function ($group) {
+                return [
+                    'GroupID' => (string) ($group['GroupID'] ?? $group['Id'] ?? ''),
+                    'Name' => $group['GroupName'] ?? $group['Name'] ?? '',
+                    'Description' => $group['Descriptions'] ?? '',
+                    'IsActive' => true,
+                ];
+            }, $groups);
+
+            return [
+                'success' => true,
+                'groups' => $formattedGroups,
+                'message' => 'لیست گروه‌ها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'groups' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    // ==================== متدهای مدیریت مخاطب (اجباری کلاس Driver) ====================
+
+    /**
+     * {@inheritdoc}
+     * اضافه کردن مخاطب جدید - متد addContact
+     */
+    public function addContact(array $contact): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'options' => [
+                'GroupID' => (int) $contact['group_id'],
+                'Mobile' => $contact['mobile'],
+                'FirstName' => $contact['first_name'] ?? '',
+                'LastName' => $contact['last_name'] ?? '',
+                'Email' => $contact['email'] ?? '',
+                'Birthday' => $contact['birthday'] ?? '',
+                'Anniversary' => $contact['anniversary'] ?? '',
+                'Corporation' => $contact['corporation'] ?? '',
+                'Job' => $contact['job'] ?? '',
+                'Address' => $contact['address'] ?? '',
+                'Desc' => $contact['desc'] ?? '',
+                'ProvinceId' => $contact['province_id'] ?? 0,
+                'CityId' => $contact['city_id'] ?? 0,
+                'Gender' => $contact['gender'] ?? '',
+            ],
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('AddContact', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'contact_id' => (string) $this->returnValue,
+                'message' => 'مخاطب با موفقیت اضافه شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contact_id' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت لیست مخاطبین - متد getContacts
+     */
+    public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'groupId' => (int) ($groupId ?? 0),
+            'keyword' => '',
+            'from' => ($page - 1) * $perPage,
+            'count' => $perPage,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('GetContacts', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $result = json_decode($this->returnValue, true);
+            $contactsData = $result['Contacts'] ?? [];
+            $total = $result['Total'] ?? count($contactsData);
+
+            $contacts = array_map(function ($contact) {
+                return [
+                    'ContactID' => (string) ($contact['ContactID'] ?? ''),
+                    'FirstName' => $contact['FirstName'] ?? '',
+                    'LastName' => $contact['LastName'] ?? '',
+                    'MobileNumbers' => $contact['Mobile'] ?? '',
+                    'Email' => $contact['Email'] ?? '',
+                    'GroupID' => (string) ($contact['GroupID'] ?? ''),
+                ];
+            }, $contactsData);
+
+            return [
+                'success' => true,
+                'contacts' => $contacts,
+                'total' => $total,
+                'message' => 'لیست مخاطبین دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contacts' => [],
+            'total' => 0,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * حذف مخاطب - متد remove
+     */
+    public function deleteContact(string $contactId): array
+    {
+        // در ملی پیامک حذف بر اساس شماره موبایل است نه contact_id
+        // برای این کار ابتدا باید مخاطب را پیدا کنیم
+        $contacts = $this->getContacts(null, 1, 1000);
+        
+        if (!$contacts['success']) {
+            return [
+                'success' => false,
+                'message' => 'امکان دریافت لیست مخاطبین وجود ندارد',
+            ];
+        }
+
+        $mobile = null;
+        foreach ($contacts['contacts'] as $contact) {
+            if ($contact['ContactID'] === $contactId) {
+                $mobile = $contact['MobileNumbers'];
+                break;
+            }
+        }
+
+        if (!$mobile) {
+            return [
+                'success' => false,
+                'message' => 'مخاطب مورد نظر یافت نشد',
+            ];
+        }
+
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'mobileNumber' => $mobile,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('RemoveContact', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت حذف شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت تعداد مخاطبین گروه
+     */
+    public function getContactsCount(string $groupId): array
+    {
+        $contacts = $this->getContacts($groupId, 1, 1);
+
+        return [
+            'success' => $contacts['success'],
+            'count' => $contacts['total'] ?? 0,
+            'message' => $contacts['message'],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * ارسال پیامک به گروه
+     */
+    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
+    {
+        $contacts = $this->getContacts($groupId, 1, 1000);
+
+        if (!$contacts['success']) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => $contacts['message'],
+            ];
+        }
+
+        $mobiles = [];
+        foreach ($contacts['contacts'] as $contact) {
+            if (!empty($contact['MobileNumbers'])) {
+                $mobiles[] = $contact['MobileNumbers'];
+            }
+        }
+
+        if (empty($mobiles)) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => 'هیچ مخاطبی در این گروه وجود ندارد',
+            ];
+        }
+
+        $result = $this->sendText($mobiles, $message, $from ?? $this->from);
+
+        return [
+            'success' => $result->isSuccessful(),
+            'message_id' => $result->getMessageId(),
+            'success_count' => $result->getSuccessCount(),
+            'error' => $result->getErrorMessage(),
+        ];
+    }
+
+    // ==================== متدهای اضافی (اختیاری) ====================
+
+    /**
+     * دریافت وضعیت تحویل پیامک - متد IsDelivered
      */
     public function isDelivered($recId): array
     {
@@ -193,16 +542,13 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * دریافت لیست شماره‌های اختصاصی
-     * متد GetNumbers
-     * 
-     * @return array{success: bool, numbers: array, message: string}
+     * دریافت لیست شماره‌های اختصاصی - متد GetNumbers
      */
     public function getNumbers(): array
     {
         $response = Http::baseUrl($this->baseUrlRest)
             ->asJson()
-            ->post('GetDeliveries', [
+            ->post('GetNumbers', [
                 'username' => $this->username,
                 'password' => $this->password,
             ])
@@ -227,14 +573,7 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * دریافت پیامک‌های دریافتی
-     * متد GetMessages
-     * 
-     * @param int $location نوع پیام (1=دریافتی، 2=ارسال‌شده)
-     * @param int $fromIndex شروع
-     * @param int $count تعداد
-     * @param string|null $from شماره فرستنده
-     * @return array{success: bool, messages: array, message: string}
+     * دریافت پیامک‌های دریافتی - متد GetMessages
      */
     public function getMessages(int $location = 1, int $fromIndex = 0, int $count = 50, ?string $from = null): array
     {
@@ -274,7 +613,7 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * دریافت تعرفه پایه
+     * دریافت تعرفه پایه - متد GetBasePrice
      */
     public function getBasePrice(): int
     {
@@ -292,190 +631,7 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * {@inheritdoc}
-     */
-    protected function isSuccessful(): bool
-    {
-        return $this->apiStatusCode === 200 && (is_numeric($this->returnValue) || $this->returnValue === 'true');
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getErrorMessage(): string
-    {
-        return $this->apiMessage ?: 'خطا در ارتباط با سرور';
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getErrorCode(): string|int
-    {
-        return $this->apiStatusCode;
-    }
-
-    // ==================== متدهای مدیریت گروه و مخاطب (دفترچه تلفن) ====================
-
-    /**
-     * اضافه کردن گروه جدید
-     * متد addGroup از وب سرویس دفترچه تلفن
-     * 
-     * @param string $name نام گروه
-     * @param string|null $description توضیحات
-     * @param bool $showToChilds نمایش به زیرمجموعه
-     * @return array{success: bool, group_id: int|null, message: string}
-     */
-    public function addGroup(string $name, ?string $description = null, bool $showToChilds = false): array
-    {
-        $data = [
-            'username' => $this->username,
-            'password' => $this->password,
-            'groupName' => $name,
-            'Descriptions' => $description ?? '',
-            'ShowToChilds' => $showToChilds,
-        ];
-
-        $response = Http::baseUrl($this->baseUrlSoap)
-            ->asJson()
-            ->post('AddGroup', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            return [
-                'success' => true,
-                'group_id' => (int) $this->returnValue,
-                'message' => 'گروه با موفقیت ایجاد شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'group_id' => null,
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * دریافت لیست گروه‌ها
-     * متد getGroups از وب سرویس دفترچه تلفن
-     * 
-     * @return array{success: bool, groups: array, message: string}
-     */
-    public function getGroups(): array
-    {
-        $data = [
-            'username' => $this->username,
-            'password' => $this->password,
-        ];
-
-        $response = Http::baseUrl($this->baseUrlSoap)
-            ->asJson()
-            ->post('GetGroups', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            $groups = json_decode($this->returnValue, true) ?? [];
-            $formattedGroups = array_map(function ($group) {
-                return [
-                    'GroupID' => $group['GroupID'] ?? $group['Id'] ?? null,
-                    'Name' => $group['GroupName'] ?? $group['Name'] ?? '',
-                    'Description' => $group['Descriptions'] ?? '',
-                    'ShowToChilds' => $group['ShowToChilds'] ?? false,
-                ];
-            }, $groups);
-
-            return [
-                'success' => true,
-                'groups' => $formattedGroups,
-                'message' => 'لیست گروه‌ها دریافت شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'groups' => [],
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * اضافه کردن مخاطب جدید
-     * متد add از وب سرویس دفترچه تلفن
-     * 
-     * @param array{
-     *     group_id: int,
-     *     mobile: string,
-     *     first_name?: string,
-     *     last_name?: string,
-     *     email?: string,
-     *     birthday?: string,
-     *     anniversary?: string,
-     *     corporation?: string,
-     *     job?: string,
-     *     address?: string,
-     *     desc?: string,
-     *     provinceId?: int,
-     *     cityId?: int,
-     *     gender?: string
-     * } $contact
-     * @return array{success: bool, contact_id: int|null, message: string}
-     */
-    public function addContact(array $contact): array
-    {
-        $data = [
-            'username' => $this->username,
-            'password' => $this->password,
-            'options' => [
-                'GroupID' => $contact['group_id'],
-                'Mobile' => $contact['mobile'],
-                'FirstName' => $contact['first_name'] ?? '',
-                'LastName' => $contact['last_name'] ?? '',
-                'Email' => $contact['email'] ?? '',
-                'Birthday' => $contact['birthday'] ?? '',
-                'Anniversary' => $contact['anniversary'] ?? '',
-                'Corporation' => $contact['corporation'] ?? '',
-                'Job' => $contact['job'] ?? '',
-                'Address' => $contact['address'] ?? '',
-                'Desc' => $contact['desc'] ?? '',
-                'ProvinceId' => $contact['province_id'] ?? 0,
-                'CityId' => $contact['city_id'] ?? 0,
-                'Gender' => $contact['gender'] ?? '',
-            ],
-        ];
-
-        $response = Http::baseUrl($this->baseUrlSoap)
-            ->asJson()
-            ->post('AddContact', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            return [
-                'success' => true,
-                'contact_id' => (int) $this->returnValue,
-                'message' => 'مخاطب با موفقیت اضافه شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'contact_id' => null,
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
      * بررسی موجود بودن شماره در دفترچه تلفن
-     * متد checkMobileExist از وب سرویس دفترچه تلفن
-     * 
-     * @param string $mobile شماره موبایل
-     * @return array{success: bool, exists: bool, contact_id: int|null, message: string}
      */
     public function checkMobileExists(string $mobile): array
     {
@@ -503,89 +659,7 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * دریافت اطلاعات دفترچه تلفن
-     * متد get از وب سرویس دفترچه تلفن
-     * 
-     * @param int|null $groupId شناسه گروه
-     * @param string|null $keyword کلمه کلیدی
-     * @param int $fromIndex شروع
-     * @param int $count تعداد
-     * @return array{success: bool, contacts: array, total: int, message: string}
-     */
-    public function getContacts(?int $groupId = null, ?string $keyword = null, int $fromIndex = 0, int $count = 50): array
-    {
-        $data = [
-            'username' => $this->username,
-            'password' => $this->password,
-            'groupId' => $groupId ?? 0,
-            'keyword' => $keyword ?? '',
-            'from' => $fromIndex,
-            'count' => $count,
-        ];
-
-        $response = Http::baseUrl($this->baseUrlSoap)
-            ->asJson()
-            ->post('GetContacts', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            $result = json_decode($this->returnValue, true);
-            $contacts = $result['Contacts'] ?? [];
-            $total = $result['Total'] ?? count($contacts);
-
-            $formattedContacts = array_map(function ($contact) {
-                return [
-                    'ContactID' => $contact['ContactID'] ?? null,
-                    'FirstName' => $contact['FirstName'] ?? '',
-                    'LastName' => $contact['LastName'] ?? '',
-                    'MobileNumbers' => $contact['Mobile'] ?? '',
-                    'Email' => $contact['Email'] ?? '',
-                    'GroupID' => $contact['GroupID'] ?? null,
-                    'Corporation' => $contact['Corporation'] ?? '',
-                    'Job' => $contact['Job'] ?? '',
-                    'Address' => $contact['Address'] ?? '',
-                    'Birthday' => $contact['Birthday'] ?? '',
-                    'Anniversary' => $contact['Anniversary'] ?? '',
-                ];
-            }, $contacts);
-
-            return [
-                'success' => true,
-                'contacts' => $formattedContacts,
-                'total' => $total,
-                'message' => 'لیست مخاطبین دریافت شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'contacts' => [],
-            'total' => 0,
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * ویرایش مخاطب
-     * متد change از وب سرویس دفترچه تلفن
-     * 
-     * @param array{
-     *     contact_id: int,
-     *     group_id?: int,
-     *     mobile?: string,
-     *     first_name?: string,
-     *     last_name?: string,
-     *     email?: string,
-     *     birthday?: string,
-     *     anniversary?: string,
-     *     corporation?: string,
-     *     job?: string,
-     *     address?: string,
-     *     desc?: string
-     * } $data
-     * @return array{success: bool, message: string}
+     * ویرایش مخاطب - متد editContact
      */
     public function editContact(array $data): array
     {
@@ -593,8 +667,8 @@ final class MelipayamakDriver extends Driver
             'username' => $this->username,
             'password' => $this->password,
             'options' => [
-                'ContactID' => $data['contact_id'],
-                'GroupID' => $data['group_id'] ?? 0,
+                'ContactID' => (int) $data['contact_id'],
+                'GroupID' => (int) ($data['group_id'] ?? 0),
                 'Mobile' => $data['mobile'] ?? '',
                 'FirstName' => $data['first_name'] ?? '',
                 'LastName' => $data['last_name'] ?? '',
@@ -622,56 +696,7 @@ final class MelipayamakDriver extends Driver
     }
 
     /**
-     * حذف مخاطب
-     * متد remove از وب سرویس دفترچه تلفن
-     * 
-     * @param string $mobile شماره موبایل
-     * @return array{success: bool, message: string}
-     */
-    public function deleteContact(string $mobile): array
-    {
-        $data = [
-            'username' => $this->username,
-            'password' => $this->password,
-            'mobileNumber' => $mobile,
-        ];
-
-        $response = Http::baseUrl($this->baseUrlSoap)
-            ->asJson()
-            ->post('RemoveContact', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        return [
-            'success' => $this->isSuccessful(),
-            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت حذف شد' : $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * دریافت تعداد مخاطبین گروه
-     * 
-     * @param int $groupId شناسه گروه
-     * @return array{success: bool, count: int, message: string}
-     */
-    public function getContactsCount(int $groupId): array
-    {
-        $contacts = $this->getContacts($groupId, null, 0, 1);
-
-        return [
-            'success' => $contacts['success'],
-            'count' => $contacts['total'] ?? 0,
-            'message' => $contacts['message'],
-        ];
-    }
-
-    /**
-     * دریافت اطلاعات مناسبت‌های فرد
-     * متد getEvents از وب سرویس دفترچه تلفن
-     * 
-     * @param int $contactId شناسه مخاطب
-     * @return array{success: bool, events: array, message: string}
+     * دریافت اطلاعات مناسبت‌های فرد - متد getEvents
      */
     public function getEvents(int $contactId): array
     {
@@ -704,89 +729,6 @@ final class MelipayamakDriver extends Driver
         ];
     }
 
-    /**
-     * ارسال پیامک به گروه
-     * 
-     * @param int $groupId شناسه گروه
-     * @param string $message متن پیامک
-     * @param string|null $from شماره فرستنده
-     * @return array{success: bool, message_id: string|null, success_count: int, error?: string}
-     */
-    public function sendToGroup(int $groupId, string $message, ?string $from = null): array
-    {
-        $contacts = $this->getContacts($groupId);
-
-        if (!$contacts['success']) {
-            return [
-                'success' => false,
-                'message_id' => null,
-                'success_count' => 0,
-                'error' => $contacts['message'],
-            ];
-        }
-
-        $mobiles = [];
-        foreach ($contacts['contacts'] as $contact) {
-            if (!empty($contact['MobileNumbers'])) {
-                $mobiles[] = $contact['MobileNumbers'];
-            }
-        }
-
-        if (empty($mobiles)) {
-            return [
-                'success' => false,
-                'message_id' => null,
-                'success_count' => 0,
-                'error' => 'هیچ مخاطبی در این گروه وجود ندارد',
-            ];
-        }
-
-        $result = $this->sendText($mobiles, $message, $from ?? $this->from);
-
-        return [
-            'success' => $result->isSuccessful(),
-            'message_id' => $result->getMessageId(),
-            'success_count' => $result->getSuccessCount(),
-            'error' => $result->getErrorMessage(),
-        ];
-    }
-
-    // ==================== متدهای غیرقابل پشتیبانی ====================
-
-    /**
-     * {@inheritdoc}
-     * 
-     * @throws UnsupportedMethodException
-     */
-    public function createGroup(string $name, ?string $description = null): array
-    {
-        return $this->addGroup($name, $description);
-    }
-
-    /**
-     * {@inheritdoc}
-     * 
-     * @throws UnsupportedMethodException
-     */
-    public function editGroup(string $groupId, string $name, ?string $description = null): array
-    {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support editGroup method. Use addGroup and remove instead.', $this->getDriverName())
-        );
-    }
-
-    /**
-     * {@inheritdoc}
-     * 
-     * @throws UnsupportedMethodException
-     */
-    public function deleteGroup(string $groupId): array
-    {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support deleteGroup method directly. Delete contacts first then group.', $this->getDriverName())
-        );
-    }
-
     // ==================== متدهای خصوصی ====================
 
     /**
@@ -798,8 +740,6 @@ final class MelipayamakDriver extends Driver
         $this->apiMessage = '';
 
         $content = $response->body();
-
-        // بررسی می‌کنیم پاسخ JSON است یا خیر
         $data = json_decode($content, true);
 
         if (json_last_error() === JSON_ERROR_NONE && isset($data['Value'])) {
@@ -838,8 +778,6 @@ final class MelipayamakDriver extends Driver
 
     /**
      * تبدیل شماره‌ها به فرمت API
-     *
-     * @param  list<string>  $phones
      */
     private function toApiPhones(array $phones): string
     {

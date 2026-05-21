@@ -69,6 +69,16 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
+     * Get driver name for exceptions
+     */
+    private function getDriverName(): string
+    {
+        return 'AmootSms';
+    }
+
+    // ==================== متدهای اجباری کلاس Driver ====================
+
+    /**
      * {@inheritdoc}
      * متد AccountStatus
      */
@@ -80,7 +90,6 @@ final class AmootSmsDriver extends Driver
 
         $this->processResponse($response);
 
-        // پاسخ به صورت رشته‌ای برمی‌گردد (مثلاً "100000")
         $content = $response->body();
         return (int) $content;
     }
@@ -117,10 +126,6 @@ final class AmootSmsDriver extends Driver
     /**
      * {@inheritdoc}
      * ارسال پیامک با الگو (متد SendWithPattern)
-     * 
-     * @param array<string> $phones
-     * @param string $patternCode شناسه الگو (int)
-     * @param array<string, mixed> $variables مقادیر الگو (با کاما جدا می‌شوند)
      */
     protected function sendPattern(array $phones, string $patternCode, array $variables, string $from): static
     {
@@ -164,36 +169,6 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * ارسال نظیر به نظیر (متد SendPeerToPeer)
-     * 
-     * @param array<array{mobile: string, message: string}> $items
-     */
-    public function sendPeerToPeer(array $items, string $from): static
-    {
-        $input = [];
-        foreach ($items as $item) {
-            $input[] = [
-                'Mobile' => $item['mobile'],
-                'SMSMessageText' => $item['message'],
-            ];
-        }
-
-        $data = array_merge($this->getBaseCredentials(), [
-            'SendDateTime' => now('Asia/Tehran')->toIso8601String(),
-            'LineNumber' => $from,
-            'Input' => $input,
-        ]);
-
-        $response = Http::baseUrl($this->baseUrl)
-            ->get('SendPeerToPeer', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        return $this;
-    }
-
-    /**
      * {@inheritdoc}
      */
     protected function isSuccessful(): bool
@@ -217,13 +192,89 @@ final class AmootSmsDriver extends Driver
         return $this->apiSuccess ? 200 : 400;
     }
 
-    // ==================== مدیریت گروه (ContactGroup) ====================
+    // ==================== متدهای مدیریت گروه (اجباری کلاس Driver) ====================
 
     /**
-     * دریافت لیست گروه‌های مخاطبین
-     * متد ContactGroupList
-     * 
-     * @return array{success: bool, groups: array, message: string}
+     * {@inheritdoc}
+     * ایجاد گروه جدید - متد AddGroup
+     */
+    public function createGroup(string $name, ?string $description = null): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'GroupName' => $name,
+            'Description' => $description ?? '',
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('AddGroup', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'group_id' => (string) ($this->apiData['GroupId'] ?? $this->apiData['Id'] ?? ''),
+                'message' => 'گروه با موفقیت ایجاد شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'group_id' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * ویرایش گروه - متد EditGroup
+     */
+    public function editGroup(string $groupId, string $name, ?string $description = null): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'GroupId' => $groupId,
+            'GroupName' => $name,
+            'Description' => $description ?? '',
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('EditGroup', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'گروه با موفقیت ویرایش شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * حذف گروه - متد DeleteGroup
+     */
+    public function deleteGroup(string $groupId): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'GroupId' => $groupId,
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('DeleteGroup', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'گروه با موفقیت حذف شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت لیست گروه‌ها - متد ContactGroupList
      */
     public function getGroups(): array
     {
@@ -237,10 +288,10 @@ final class AmootSmsDriver extends Driver
             $groupsData = $this->apiData;
             $groups = array_map(function ($item) {
                 return [
-                    'GroupID' => $item['Id'] ?? $item['ContactGroupID'] ?? null,
+                    'GroupID' => (string) ($item['Id'] ?? $item['ContactGroupID'] ?? ''),
                     'Name' => $item['Name'] ?? $item['Title'] ?? '',
                     'Description' => $item['Description'] ?? '',
-                    'MemberCount' => $item['MemberCount'] ?? 0,
+                    'IsActive' => true,
                 ];
             }, $groupsData);
 
@@ -258,14 +309,198 @@ final class AmootSmsDriver extends Driver
         ];
     }
 
-    // ==================== مدیریت مخاطب (Contact) ====================
+    // ==================== متدهای مدیریت مخاطب (اجباری کلاس Driver) ====================
 
     /**
-     * دریافت اطلاعات یک مخاطب
-     * متد ContactGet
-     * 
-     * @param int $contactId شناسه مخاطب
-     * @return array{success: bool, contact: array|null, message: string}
+     * {@inheritdoc}
+     * اضافه کردن مخاطب - متد ContactCreate
+     */
+    public function addContact(array $contact): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'ContactGroupID' => (int) $contact['group_id'],
+            'Active' => $contact['active'] ?? true,
+            'Mobile' => $contact['mobile'],
+            'FName' => $contact['first_name'] ?? '',
+            'LName' => $contact['last_name'] ?? '',
+            'GenderType' => $contact['gender_type'] ?? false,
+            'CompanyTitle' => $contact['corporation'] ?? '',
+            'JobTitle' => $contact['job_title'] ?? '',
+            'Email' => $contact['email'] ?? '',
+            'CityName' => $contact['city_name'] ?? '',
+            'AddressText' => $contact['address'] ?? '',
+            'BornDate' => $contact['born_date'] ?? '',
+            'AnniversaryDate' => $contact['anniversary_date'] ?? '',
+            'CustomText1' => $contact['custom_text1'] ?? '',
+            'CustomText2' => $contact['custom_text2'] ?? '',
+            'CustomText3' => $contact['custom_text3'] ?? '',
+            'CustomText4' => $contact['custom_text4'] ?? '',
+            'CustomText5' => $contact['custom_text5'] ?? '',
+            'CustomText6' => $contact['custom_text6'] ?? '',
+            'CustomDate1' => $contact['custom_date1'] ?? '',
+            'CustomDate2' => $contact['custom_date2'] ?? '',
+            'CustomDate3' => $contact['custom_date3'] ?? '',
+            'Labels' => $contact['labels'] ?? '',
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('ContactCreate', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'contact_id' => (string) ($this->apiData['ContactID'] ?? $this->apiData['Id'] ?? ''),
+                'message' => 'مخاطب با موفقیت اضافه شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contact_id' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت لیست مخاطبین - متد ContactList
+     */
+    public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'ContactGroupID' => (int) ($groupId ?? 0),
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('ContactList', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $contactsData = $this->apiData;
+            $contacts = array_map(function ($item) {
+                return [
+                    'ContactID' => (string) ($item['Id'] ?? $item['ContactID'] ?? ''),
+                    'FirstName' => $item['FName'] ?? $item['FirstName'] ?? '',
+                    'LastName' => $item['LName'] ?? $item['LastName'] ?? '',
+                    'MobileNumbers' => $item['Mobile'] ?? '',
+                    'Email' => $item['Email'] ?? '',
+                    'GroupID' => (string) ($item['ContactGroupID'] ?? $item['GroupID'] ?? ''),
+                ];
+            }, $contactsData);
+
+            return [
+                'success' => true,
+                'contacts' => $contacts,
+                'total' => count($contacts),
+                'message' => 'لیست مخاطبین دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contacts' => [],
+            'total' => 0,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * حذف مخاطب - متد ContactDelete
+     */
+    public function deleteContact(string $contactId): array
+    {
+        $data = array_merge($this->getBaseCredentials(), [
+            'ContactID' => (int) $contactId,
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('ContactDelete', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت حذف شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * دریافت تعداد مخاطبین گروه
+     */
+    public function getContactsCount(string $groupId): array
+    {
+        $contacts = $this->getContacts($groupId, 1, 1000);
+
+        if ($contacts['success']) {
+            return [
+                'success' => true,
+                'count' => $contacts['total'],
+                'message' => 'تعداد مخاطبین دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'count' => 0,
+            'message' => $contacts['message'],
+        ];
+    }
+
+    /**
+     * {@inheritdoc}
+     * ارسال پیامک به گروه
+     */
+    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
+    {
+        $contacts = $this->getContacts($groupId, 1, 1000);
+
+        if (!$contacts['success']) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => $contacts['message'],
+            ];
+        }
+
+        $mobiles = [];
+        foreach ($contacts['contacts'] as $contact) {
+            if (!empty($contact['MobileNumbers'])) {
+                $mobiles[] = $contact['MobileNumbers'];
+            }
+        }
+
+        if (empty($mobiles)) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => 'هیچ مخاطبی در این گروه وجود ندارد',
+            ];
+        }
+
+        $result = $this->sendText($mobiles, $message, $from ?? $this->from);
+
+        return [
+            'success' => $result->isSuccessful(),
+            'message_id' => $result->getMessageId(),
+            'success_count' => $result->getSuccessCount(),
+            'error' => $result->getErrorMessage(),
+        ];
+    }
+
+    // ==================== متدهای اضافی (اختیاری) ====================
+
+    /**
+     * دریافت اطلاعات یک مخاطب - متد ContactGet
      */
     public function getContact(int $contactId): array
     {
@@ -295,68 +530,15 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * دریافت لیست مخاطبین یک گروه
-     * متد ContactList
-     * 
-     * @param int|null $groupId شناسه گروه (اختیاری)
-     * @param int $page شماره صفحه
-     * @param int $perPage تعداد در هر صفحه
-     * @return array{success: bool, contacts: array, total: int, message: string}
-     */
-    public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array
-    {
-        $data = array_merge($this->getBaseCredentials(), [
-            'ContactGroupID' => (int) $groupId,
-        ]);
-
-        $response = Http::baseUrl($this->baseUrl)
-            ->get('ContactList', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            $contactsData = $this->apiData;
-            $contacts = array_map([$this, 'formatContact'], $contactsData);
-
-            return [
-                'success' => true,
-                'contacts' => $contacts,
-                'total' => count($contacts),
-                'message' => 'لیست مخاطبین دریافت شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'contacts' => [],
-            'total' => 0,
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * جستجوی مخاطبین
-     * متد ContactSearch
-     * 
-     * @param array{
-     *     mobile?: string,
-     *     fname?: string,
-     *     lname?: string,
-     *     email?: string,
-     *     company_title?: string,
-     *     city_name?: string,
-     *     labels?: string
-     * } $searchParams
-     * @return array{success: bool, contacts: array, message: string}
+     * جستجوی مخاطبین - متد ContactSearch
      */
     public function searchContacts(array $searchParams): array
     {
         $data = array_merge($this->getBaseCredentials(), [
             'Mobile' => $searchParams['mobile'] ?? '',
             'Labels' => $searchParams['labels'] ?? '',
-            'FName' => $searchParams['fname'] ?? '',
-            'LName' => $searchParams['lname'] ?? '',
+            'FName' => $searchParams['first_name'] ?? '',
+            'LName' => $searchParams['last_name'] ?? '',
             'CompanyTitle' => $searchParams['company_title'] ?? '',
             'JobTitle' => $searchParams['job_title'] ?? '',
             'Email' => $searchParams['email'] ?? '',
@@ -400,92 +582,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * ایجاد مخاطب جدید
-     * متد ContactCreate
-     * 
-     * @param array{
-     *     group_id: int,
-     *     mobile: string,
-     *     active?: bool,
-     *     fname?: string,
-     *     lname?: string,
-     *     gender_type?: bool,
-     *     company_title?: string,
-     *     job_title?: string,
-     *     email?: string,
-     *     city_name?: string,
-     *     address?: string,
-     *     born_date?: string,
-     *     anniversary_date?: string,
-     *     labels?: string,
-     *     custom_text1?: string,
-     *     custom_text2?: string,
-     *     custom_text3?: string,
-     *     custom_text4?: string,
-     *     custom_text5?: string,
-     *     custom_text6?: string,
-     *     custom_date1?: string,
-     *     custom_date2?: string,
-     *     custom_date3?: string
-     * } $contact
-     * @return array{success: bool, contact_id: int|null, message: string}
-     */
-    public function addContact(array $contact): array
-    {
-        $data = array_merge($this->getBaseCredentials(), [
-            'ContactGroupID' => (int) $contact['group_id'],
-            'Active' => $contact['active'] ?? true,
-            'Mobile' => $contact['mobile'],
-            'FName' => $contact['fname'] ?? '',
-            'LName' => $contact['lname'] ?? '',
-            'GenderType' => $contact['gender_type'] ?? false,
-            'CompanyTitle' => $contact['company_title'] ?? '',
-            'JobTitle' => $contact['job_title'] ?? '',
-            'Email' => $contact['email'] ?? '',
-            'CityName' => $contact['city_name'] ?? '',
-            'AddressText' => $contact['address'] ?? '',
-            'BornDate' => $contact['born_date'] ?? '',
-            'AnniversaryDate' => $contact['anniversary_date'] ?? '',
-            'CustomText1' => $contact['custom_text1'] ?? '',
-            'CustomText2' => $contact['custom_text2'] ?? '',
-            'CustomText3' => $contact['custom_text3'] ?? '',
-            'CustomText4' => $contact['custom_text4'] ?? '',
-            'CustomText5' => $contact['custom_text5'] ?? '',
-            'CustomText6' => $contact['custom_text6'] ?? '',
-            'CustomDate1' => $contact['custom_date1'] ?? '',
-            'CustomDate2' => $contact['custom_date2'] ?? '',
-            'CustomDate3' => $contact['custom_date3'] ?? '',
-            'Labels' => $contact['labels'] ?? '',
-        ]);
-
-        $response = Http::baseUrl($this->baseUrl)
-            ->get('ContactCreate', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        if ($this->isSuccessful()) {
-            return [
-                'success' => true,
-                'contact_id' => (int) ($this->apiData['ContactID'] ?? $this->apiData['Id'] ?? null),
-                'message' => 'مخاطب با موفقیت اضافه شد',
-            ];
-        }
-
-        return [
-            'success' => false,
-            'contact_id' => null,
-            'message' => $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * ویرایش مخاطب
-     * متد ContactEdit
-     * 
-     * @param int $contactId شناسه مخاطب
-     * @param array $data اطلاعات جدید
-     * @return array{success: bool, message: string}
+     * ویرایش مخاطب - متد ContactEdit
      */
     public function editContact(int $contactId, array $data): array
     {
@@ -494,10 +591,10 @@ final class AmootSmsDriver extends Driver
             'ContactGroupID' => (int) ($data['group_id'] ?? 0),
             'Active' => $data['active'] ?? true,
             'Mobile' => $data['mobile'] ?? '',
-            'FName' => $data['fname'] ?? '',
-            'LName' => $data['lname'] ?? '',
+            'FName' => $data['first_name'] ?? '',
+            'LName' => $data['last_name'] ?? '',
             'GenderType' => $data['gender_type'] ?? false,
-            'CompanyTitle' => $data['company_title'] ?? '',
+            'CompanyTitle' => $data['corporation'] ?? '',
             'JobTitle' => $data['job_title'] ?? '',
             'Email' => $data['email'] ?? '',
             'CityName' => $data['city_name'] ?? '',
@@ -529,37 +626,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * حذف مخاطب
-     * متد ContactDelete
-     * 
-     * @param int $contactId شناسه مخاطب
-     * @return array{success: bool, message: string}
-     */
-    public function deleteContact(string $contactId): array
-    {
-        $data = array_merge($this->getBaseCredentials(), [
-            'ContactID' => (int) $contactId,
-        ]);
-
-        $response = Http::baseUrl($this->baseUrl)
-            ->get('ContactDelete', $data)
-            ->throw();
-
-        $this->processResponse($response);
-
-        return [
-            'success' => $this->isSuccessful(),
-            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت حذف شد' : $this->getErrorMessage(),
-        ];
-    }
-
-    /**
-     * تغییر برچسب مخاطب
-     * متد ContactChangeLabel
-     * 
-     * @param string $fromLabel برچسب مبدأ
-     * @param string $toLabel برچسب مقصد
-     * @return array{success: bool, message: string}
+     * تغییر برچسب مخاطب - متد ContactChangeLabel
      */
     public function changeContactLabel(string $fromLabel, string $toLabel): array
     {
@@ -581,84 +648,35 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * دریافت تعداد مخاطبین گروه (با دریافت لیست و شمارش)
-     * 
-     * @param string $groupId شناسه گروه
-     * @return array{success: bool, count: int, message: string}
+     * ارسال نظیر به نظیر - متد SendPeerToPeer
      */
-    public function getContactsCount(string $groupId): array
+    public function sendPeerToPeer(array $items, string $from): static
     {
-        $contacts = $this->getContacts($groupId, 1, 1000);
-
-        if ($contacts['success']) {
-            return [
-                'success' => true,
-                'count' => $contacts['total'],
-                'message' => 'تعداد مخاطبین دریافت شد',
+        $input = [];
+        foreach ($items as $item) {
+            $input[] = [
+                'Mobile' => $item['mobile'],
+                'SMSMessageText' => $item['message'],
             ];
         }
 
-        return [
-            'success' => false,
-            'count' => 0,
-            'message' => $contacts['message'],
-        ];
+        $data = array_merge($this->getBaseCredentials(), [
+            'SendDateTime' => now('Asia/Tehran')->toIso8601String(),
+            'LineNumber' => $from,
+            'Input' => $input,
+        ]);
+
+        $response = Http::baseUrl($this->baseUrl)
+            ->get('SendPeerToPeer', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return $this;
     }
 
     /**
-     * ارسال پیامک به گروه
-     * 
-     * @param string $groupId شناسه گروه
-     * @param string $message متن پیامک
-     * @param string|null $from شماره فرستنده (اختیاری)
-     * @return array{success: bool, message_id: string|null, success_count: int, error?: string}
-     */
-    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
-    {
-        $contacts = $this->getContacts($groupId, 1, 1000);
-
-        if (!$contacts['success']) {
-            return [
-                'success' => false,
-                'message_id' => null,
-                'success_count' => 0,
-                'error' => $contacts['message'],
-            ];
-        }
-
-        $mobiles = [];
-        foreach ($contacts['contacts'] as $contact) {
-            if (!empty($contact['MobileNumbers'])) {
-                $mobiles[] = $contact['MobileNumbers'];
-            }
-        }
-
-        if (empty($mobiles)) {
-            return [
-                'success' => false,
-                'message_id' => null,
-                'success_count' => 0,
-                'error' => 'هیچ مخاطبی در این گروه وجود ندارد',
-            ];
-        }
-
-        $result = $this->sendText($mobiles, $message, $from ?? $this->from);
-
-        return [
-            'success' => $result->isSuccessful(),
-            'message_id' => $result->getMessageId(),
-            'success_count' => $result->getSuccessCount(),
-            'error' => $result->getErrorMessage(),
-        ];
-    }
-
-    // ==================== متدهای اضافی مفید ====================
-
-    /**
-     * دریافت لیست کدهای الگو
-     * متد PatternCodeList
-     * 
-     * @return array{success: bool, patterns: array, message: string}
+     * دریافت لیست کدهای الگو - متد PatternCodeList
      */
     public function getPatterns(): array
     {
@@ -684,11 +702,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * دریافت وضعیت تحویل پیامک
-     * متد GetDelivery
-     * 
-     * @param int $messageId شناسه پیامک
-     * @return array{success: bool, status: string|null, delivery_status: int|null, message: string}
+     * دریافت وضعیت تحویل پیامک - متد GetDelivery
      */
     public function getDeliveryStatus(int $messageId): array
     {
@@ -720,11 +734,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * دریافت پیامک‌های دریافتی جدید
-     * متد RecieveNewMessages
-     * 
-     * @param int $count تعداد پیامک (حداکثر 100)
-     * @return array{success: bool, messages: array, message: string}
+     * دریافت پیامک‌های دریافتی جدید - متد RecieveNewMessages
      */
     public function receiveNewMessages(int $count = 10): array
     {
@@ -754,13 +764,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * دریافت پیامک‌های دریافتی در بازه زمانی
-     * متد RecieveMessages
-     * 
-     * @param string $fromDateTime تاریخ شروع
-     * @param string $toDateTime تاریخ پایان
-     * @param string|null $lineNumber شماره خط (اختیاری)
-     * @return array{success: bool, messages: array, message: string}
+     * دریافت پیامک‌های دریافتی در بازه زمانی - متد RecieveMessages
      */
     public function receiveMessages(string $fromDateTime, string $toDateTime, ?string $lineNumber = null): array
     {
@@ -792,13 +796,7 @@ final class AmootSmsDriver extends Driver
     }
 
     /**
-     * محاسبه قیمت پیامک
-     * متد CalculateMessagePrice
-     * 
-     * @param string $message متن پیامک
-     * @param string $lineNumber شماره خط
-     * @param array<string> $mobiles لیست شماره موبایل‌ها
-     * @return array{success: bool, price: int|null, message: string}
+     * محاسبه قیمت پیامک - متد CalculateMessagePrice
      */
     public function calculatePrice(string $message, string $lineNumber, array $mobiles): array
     {
@@ -852,15 +850,6 @@ final class AmootSmsDriver extends Driver
             'GenderType' => $contact['GenderType'] ?? false,
             'BornDate' => $contact['BornDate'] ?? '',
             'AnniversaryDate' => $contact['AnniversaryDate'] ?? '',
-            'CustomText1' => $contact['CustomText1'] ?? '',
-            'CustomText2' => $contact['CustomText2'] ?? '',
-            'CustomText3' => $contact['CustomText3'] ?? '',
-            'CustomText4' => $contact['CustomText4'] ?? '',
-            'CustomText5' => $contact['CustomText5'] ?? '',
-            'CustomText6' => $contact['CustomText6'] ?? '',
-            'CustomDate1' => $contact['CustomDate1'] ?? '',
-            'CustomDate2' => $contact['CustomDate2'] ?? '',
-            'CustomDate3' => $contact['CustomDate3'] ?? '',
         ];
     }
 
@@ -870,12 +859,9 @@ final class AmootSmsDriver extends Driver
     private function processResponse($response): void
     {
         $content = $response->body();
-
-        // بررسی می‌کنیم پاسخ JSON است یا خیر
         $data = json_decode($content, true);
 
         if (json_last_error() === JSON_ERROR_NONE && is_array($data)) {
-            // پاسخ JSON
             $this->apiSuccess = isset($data['Status']) && $data['Status'] === true;
             $this->apiMessage = $data['Message'] ?? '';
             $this->apiData = $data['Data'] ?? $data;
@@ -883,8 +869,10 @@ final class AmootSmsDriver extends Driver
             if ($this->isSuccessful() && isset($this->apiData['MessageID'])) {
                 $this->setMessageId((string) $this->apiData['MessageID']);
             }
+            if ($this->isSuccessful() && isset($this->apiData['RefID'])) {
+                $this->setMessageId((string) $this->apiData['RefID']);
+            }
         } else {
-            // پاسخ غیر JSON (مانند AccountStatus که عدد برمی‌گرداند)
             $this->apiSuccess = is_numeric($content) || strpos($content, 'Success') !== false;
             $this->apiMessage = $this->apiSuccess ? 'با موفقیت انجام شد' : $content;
             $this->apiData = ['result' => $content];
@@ -893,7 +881,6 @@ final class AmootSmsDriver extends Driver
 
     /**
      * @param  array<string>  $phones
-     *
      * @throws UnsupportedMultiplePhonesException
      */
     private function validatePatternPhones(array $phones): void
@@ -905,8 +892,6 @@ final class AmootSmsDriver extends Driver
 
     /**
      * تبدیل شماره‌ها به فرمت API
-     *
-     * @param  list<string>  $phones
      */
     private function toApiPhones(array $phones): string
     {
@@ -915,8 +900,6 @@ final class AmootSmsDriver extends Driver
 
     /**
      * تبدیل متغیرها به فرمت الگوی API
-     *
-     * @param  array<string, mixed>  $variables
      */
     private function toApiPattern(array $variables): string
     {
