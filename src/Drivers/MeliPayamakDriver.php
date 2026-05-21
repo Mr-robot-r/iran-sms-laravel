@@ -5,27 +5,48 @@ declare(strict_types=1);
 namespace Mastertek\IranSms\Drivers;
 
 use Mastertek\IranSms\Abstracts\Driver;
+use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
 use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
 use Mastertek\IranSms\Exceptions\UnsupportedMultiplePhonesException;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
 
 /**
  * @internal
  *
- * @see https://www.melipayamak.com/api/sendsimplesms2/
- * @see https://www.melipayamak.com/api/sendbybasenumber2/
+ * @see https://github.com/Melipayamak/melipayamak-php
  */
-final class MeliPayamakDriver extends Driver
+final class MelipayamakDriver extends Driver
 {
     /**
-     * The base URL for the API.
+     * The base URL for the REST API.
      */
-    private string $baseUrl = 'https://rest.payamak-panel.com/api/SendSMS';
+    private string $baseUrlRest = 'https://rest.payamak-panel.com/api/SendSMS/';
 
     /**
-     * The status code returned in the API response body (e.g., `Value` field).
+     * The base URL for the SOAP API (برای متدهای پیشرفته).
      */
-    private string $apiStatusCode;
+    private string $baseUrlSoap = 'https://soap.payamak-panel.com/api/SendSMS/';
+
+    /**
+     * The status code returned in the API response body.
+     */
+    private int $apiStatusCode;
+
+    /**
+     * The message returned in the API response body.
+     */
+    private string $apiMessage;
+
+    /**
+     * The data returned from API.
+     */
+    private array $apiData;
+
+    /**
+     * The return value from API.
+     */
+    private string $returnValue;
 
     public function __construct(
         private readonly string $username,
@@ -34,18 +55,25 @@ final class MeliPayamakDriver extends Driver
     ) {
     }
 
+    // ==================== متدهای اصلی ====================
+
     /**
      * {@inheritdoc}
+     * دریافت اعتبار از متد GetCredit
      */
     public function credit(): int
     {
-        $response = Http::baseUrl($this->baseUrl)
-            ->asForm()
-            ->acceptJson()
-            ->post('GetCredit2', $this->credentials())
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('GetCredit', [
+                'username' => $this->username,
+                'password' => $this->password,
+            ])
             ->throw();
 
-        return (int) $response->json('Value');
+        $this->processResponse($response);
+
+        return (int) $this->returnValue;
     }
 
     /**
@@ -61,45 +89,206 @@ final class MeliPayamakDriver extends Driver
      *
      * @throws UnsupportedMethodException
      */
-    protected function sendOtp(string $phone, string $message, string $from): static
+    protected function sendOtp(string $phone, string $code, string $from): static
     {
         throw UnsupportedMethodException::make($this->getDriverName(), method: 'otp', alternative: 'pattern');
     }
 
     /**
      * {@inheritdoc}
-     *
-     * @throws UnsupportedMultiplePhonesException
+     * ارسال با الگو از طریق متد SendByBaseNumber
      */
     protected function sendPattern(array $phones, string $patternCode, array $variables, string $from): static
     {
         $this->validatePatternPhones($phones);
+        $this->validatePatternVariables($variables);
 
         $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'text' => $patternCode,
             'to' => $phones[0],
-            'bodyId' => $patternCode,
-            'text' => $this->toApiPattern($variables),
+            'bodyId' => (int) $patternCode,
         ];
 
-        $this->execute('BaseServiceNumber', $data);
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('SendByBaseNumber', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $this->setMessageId($this->returnValue);
+            $this->setSuccessCount(1);
+        }
 
         return $this;
     }
 
     /**
      * {@inheritdoc}
+     * ارسال ساده با متد SendSimpleSMS
      */
     protected function sendText(array $phones, string $message, string $from): static
     {
         $data = [
-            'from' => $from,
+            'username' => $this->username,
+            'password' => $this->password,
             'text' => $message,
             'to' => $this->toApiPhones($phones),
+            'from' => $from,
         ];
 
-        $this->execute('SendSMS', $data);
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('SendSimpleSMS', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $this->setMessageId($this->returnValue);
+            $this->setSuccessCount(count($phones));
+        }
 
         return $this;
+    }
+
+    /**
+     * دریافت وضعیت تحویل پیامک
+     * متد IsDelivered
+     * 
+     * @param string|array $recId شناسه پیامک
+     * @return array{success: bool, delivered: bool|null, message: string}
+     */
+    public function isDelivered($recId): array
+    {
+        $ids = is_array($recId) ? implode(',', $recId) : $recId;
+
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('GetDeliveries', [
+                'username' => $this->username,
+                'password' => $this->password,
+                'recId' => $ids,
+            ])
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'delivered' => $this->returnValue === 'true',
+                'message' => 'وضعیت پیامک دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'delivered' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت لیست شماره‌های اختصاصی
+     * متد GetNumbers
+     * 
+     * @return array{success: bool, numbers: array, message: string}
+     */
+    public function getNumbers(): array
+    {
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('GetDeliveries', [
+                'username' => $this->username,
+                'password' => $this->password,
+            ])
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $numbers = explode(',', $this->returnValue);
+            return [
+                'success' => true,
+                'numbers' => $numbers,
+                'message' => 'لیست شماره‌ها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'numbers' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت پیامک‌های دریافتی
+     * متد GetMessages
+     * 
+     * @param int $location نوع پیام (1=دریافتی، 2=ارسال‌شده)
+     * @param int $fromIndex شروع
+     * @param int $count تعداد
+     * @param string|null $from شماره فرستنده
+     * @return array{success: bool, messages: array, message: string}
+     */
+    public function getMessages(int $location = 1, int $fromIndex = 0, int $count = 50, ?string $from = null): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'location' => $location,
+            'from' => $fromIndex,
+            'count' => $count,
+        ];
+
+        if ($from) {
+            $data['from'] = $from;
+        }
+
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('GetMessages', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $messages = json_decode($this->returnValue, true) ?? [];
+            return [
+                'success' => true,
+                'messages' => $messages,
+                'message' => 'لیست پیامک‌ها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'messages' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت تعرفه پایه
+     */
+    public function getBasePrice(): int
+    {
+        $response = Http::baseUrl($this->baseUrlRest)
+            ->asJson()
+            ->post('GetBasePrice', [
+                'username' => $this->username,
+                'password' => $this->password,
+            ])
+            ->throw();
+
+        $this->processResponse($response);
+
+        return (int) $this->returnValue;
     }
 
     /**
@@ -107,7 +296,7 @@ final class MeliPayamakDriver extends Driver
      */
     protected function isSuccessful(): bool
     {
-        return mb_strlen($this->apiStatusCode) >= 15;
+        return $this->apiStatusCode === 200 && (is_numeric($this->returnValue) || $this->returnValue === 'true');
     }
 
     /**
@@ -115,93 +304,510 @@ final class MeliPayamakDriver extends Driver
      */
     protected function getErrorMessage(): string
     {
-        return match ($this->apiStatusCode) {
-            '-10' => 'متن حاوی لینک می‌باشد',
-            '-7' => 'خطایی در شماره فرستنده رخ داده است با پشتیبانی تماس بگیرید',
-            '-6' => 'خطای داخلی رخ داده است با پشتیبانی تماس بگیرید',
-            '-5' => 'متن ارسالی باتوجه به متغیرهای مشخص شده در متن پیشفرض همخوانی ندارد',
-            '-4' => 'کد متن ارسالی صحیح نمی‌باشد و یا توسط مدیر سامانه تأیید نشده است',
-            '-3' => 'خط ارسالی در سیستم تعریف نشده است، با پشتیبانی سامانه تماس بگیرید',
-            '-2' => 'محدودیت تعداد شماره، محدودیت هربار ارسال یک شماره موبایل می‌باشد',
-            '-1' => 'دسترسی برای استفاده از این وبسرویس غیرفعال است. با پشتیبانی تماس بگیرید',
-            '0' => 'نام کاربری یا رمزعبور صحیح نمی‌باشد',
-            '2' => 'اعتبار کافی نمی‌باشد',
-            '3' => 'محدودیت در ارسال روزانه',
-            '4' => 'محدودیت در حجم ارسال',
-            '5' => 'شماره فرستنده معتبر نمی‌باشد',
-            '6' => 'سامانه درحال بروزرسانی می‌باشد',
-            '7' => 'متن حاوی کلمه فیلتر شده می‌باشد',
-            '9' => 'ارسال از خطوط عمومی از طریق وب سرویس امکان‌پذیر نمی‌باشد',
-            '10' => 'کاربر موردنظر فعال نمی‌باشد',
-            '11' => 'ارسال نشده',
-            '12' => 'مدارک کاربر کامل نمی‌باشد',
-            '14' => 'متن حاوی لینک می‌باشد',
-            '15' => 'ارسال به بیش از 1 شماره همراه بدون درج "لغو11" ممکن نیست',
-            '16' => 'شماره گیرنده‌ای یافت نشد',
-            '17' => 'متن پیامک خالی می‌باشد',
-            '35' => 'شماره در لیست سیاه مخابرات می‌باشد',
-            default => "خطای ناشناخته با کد {$this->apiStatusCode} رخ داده است"
-        };
+        return $this->apiMessage ?: 'خطا در ارتباط با سرور';
     }
 
     /**
      * {@inheritdoc}
      */
-    protected function getErrorCode(): string
+    protected function getErrorCode(): string|int
     {
         return $this->apiStatusCode;
     }
 
-    /**
-     * Executes the API request to the specified endpoint with given data.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function execute(string $endpoint, array $data): void
-    {
-        $response = Http::baseUrl($this->baseUrl)
-            ->asForm()
-            ->acceptJson()
-            ->post($endpoint, array_merge($this->credentials(), $data))
-            ->throw();
-
-        $this->apiStatusCode = (string) $response->json('Value');
-
-    }
+    // ==================== متدهای مدیریت گروه و مخاطب (دفترچه تلفن) ====================
 
     /**
-     * @return array{username: string, password: string}
+     * اضافه کردن گروه جدید
+     * متد addGroup از وب سرویس دفترچه تلفن
+     * 
+     * @param string $name نام گروه
+     * @param string|null $description توضیحات
+     * @param bool $showToChilds نمایش به زیرمجموعه
+     * @return array{success: bool, group_id: int|null, message: string}
      */
-    private function credentials(): array
+    public function addGroup(string $name, ?string $description = null, bool $showToChilds = false): array
     {
-        return [
+        $data = [
             'username' => $this->username,
             'password' => $this->password,
+            'groupName' => $name,
+            'Descriptions' => $description ?? '',
+            'ShowToChilds' => $showToChilds,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('AddGroup', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'group_id' => (int) $this->returnValue,
+                'message' => 'گروه با موفقیت ایجاد شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'group_id' => null,
+            'message' => $this->getErrorMessage(),
         ];
     }
 
     /**
-     * Transforms variables into the API's expected pattern structure.
-     *
-     * @param  array<string, mixed>  $variables
-     *
-     * @example - ['key_one' => 'value_one', 'key_two' => 'value_two'] becomes 'value_one;value_two'
+     * دریافت لیست گروه‌ها
+     * متد getGroups از وب سرویس دفترچه تلفن
+     * 
+     * @return array{success: bool, groups: array, message: string}
      */
-    private function toApiPattern(array $variables): string
+    public function getGroups(): array
     {
-        return implode(';', $variables);
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('GetGroups', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $groups = json_decode($this->returnValue, true) ?? [];
+            $formattedGroups = array_map(function ($group) {
+                return [
+                    'GroupID' => $group['GroupID'] ?? $group['Id'] ?? null,
+                    'Name' => $group['GroupName'] ?? $group['Name'] ?? '',
+                    'Description' => $group['Descriptions'] ?? '',
+                    'ShowToChilds' => $group['ShowToChilds'] ?? false,
+                ];
+            }, $groups);
+
+            return [
+                'success' => true,
+                'groups' => $formattedGroups,
+                'message' => 'لیست گروه‌ها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'groups' => [],
+            'message' => $this->getErrorMessage(),
+        ];
     }
 
     /**
-     * Transforms phones into the API's expected phone structure.
-     *
-     * @param  list<string>  $phones
-     *
-     * @example - ['0913', '0914'] becomes "0913,0914"
+     * اضافه کردن مخاطب جدید
+     * متد add از وب سرویس دفترچه تلفن
+     * 
+     * @param array{
+     *     group_id: int,
+     *     mobile: string,
+     *     first_name?: string,
+     *     last_name?: string,
+     *     email?: string,
+     *     birthday?: string,
+     *     anniversary?: string,
+     *     corporation?: string,
+     *     job?: string,
+     *     address?: string,
+     *     desc?: string,
+     *     provinceId?: int,
+     *     cityId?: int,
+     *     gender?: string
+     * } $contact
+     * @return array{success: bool, contact_id: int|null, message: string}
      */
-    private function toApiPhones(array $phones): string
+    public function addContact(array $contact): array
     {
-        return implode(',', $phones);
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'options' => [
+                'GroupID' => $contact['group_id'],
+                'Mobile' => $contact['mobile'],
+                'FirstName' => $contact['first_name'] ?? '',
+                'LastName' => $contact['last_name'] ?? '',
+                'Email' => $contact['email'] ?? '',
+                'Birthday' => $contact['birthday'] ?? '',
+                'Anniversary' => $contact['anniversary'] ?? '',
+                'Corporation' => $contact['corporation'] ?? '',
+                'Job' => $contact['job'] ?? '',
+                'Address' => $contact['address'] ?? '',
+                'Desc' => $contact['desc'] ?? '',
+                'ProvinceId' => $contact['province_id'] ?? 0,
+                'CityId' => $contact['city_id'] ?? 0,
+                'Gender' => $contact['gender'] ?? '',
+            ],
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('AddContact', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'contact_id' => (int) $this->returnValue,
+                'message' => 'مخاطب با موفقیت اضافه شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contact_id' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * بررسی موجود بودن شماره در دفترچه تلفن
+     * متد checkMobileExist از وب سرویس دفترچه تلفن
+     * 
+     * @param string $mobile شماره موبایل
+     * @return array{success: bool, exists: bool, contact_id: int|null, message: string}
+     */
+    public function checkMobileExists(string $mobile): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'mobileNumber' => $mobile,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('CheckMobileExist', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        $exists = $this->returnValue !== '0' && !empty($this->returnValue);
+
+        return [
+            'success' => true,
+            'exists' => $exists,
+            'contact_id' => $exists ? (int) $this->returnValue : null,
+            'message' => $exists ? 'شماره در دفترچه تلفن موجود است' : 'شماره در دفترچه تلفن موجود نیست',
+        ];
+    }
+
+    /**
+     * دریافت اطلاعات دفترچه تلفن
+     * متد get از وب سرویس دفترچه تلفن
+     * 
+     * @param int|null $groupId شناسه گروه
+     * @param string|null $keyword کلمه کلیدی
+     * @param int $fromIndex شروع
+     * @param int $count تعداد
+     * @return array{success: bool, contacts: array, total: int, message: string}
+     */
+    public function getContacts(?int $groupId = null, ?string $keyword = null, int $fromIndex = 0, int $count = 50): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'groupId' => $groupId ?? 0,
+            'keyword' => $keyword ?? '',
+            'from' => $fromIndex,
+            'count' => $count,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('GetContacts', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $result = json_decode($this->returnValue, true);
+            $contacts = $result['Contacts'] ?? [];
+            $total = $result['Total'] ?? count($contacts);
+
+            $formattedContacts = array_map(function ($contact) {
+                return [
+                    'ContactID' => $contact['ContactID'] ?? null,
+                    'FirstName' => $contact['FirstName'] ?? '',
+                    'LastName' => $contact['LastName'] ?? '',
+                    'MobileNumbers' => $contact['Mobile'] ?? '',
+                    'Email' => $contact['Email'] ?? '',
+                    'GroupID' => $contact['GroupID'] ?? null,
+                    'Corporation' => $contact['Corporation'] ?? '',
+                    'Job' => $contact['Job'] ?? '',
+                    'Address' => $contact['Address'] ?? '',
+                    'Birthday' => $contact['Birthday'] ?? '',
+                    'Anniversary' => $contact['Anniversary'] ?? '',
+                ];
+            }, $contacts);
+
+            return [
+                'success' => true,
+                'contacts' => $formattedContacts,
+                'total' => $total,
+                'message' => 'لیست مخاطبین دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'contacts' => [],
+            'total' => 0,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * ویرایش مخاطب
+     * متد change از وب سرویس دفترچه تلفن
+     * 
+     * @param array{
+     *     contact_id: int,
+     *     group_id?: int,
+     *     mobile?: string,
+     *     first_name?: string,
+     *     last_name?: string,
+     *     email?: string,
+     *     birthday?: string,
+     *     anniversary?: string,
+     *     corporation?: string,
+     *     job?: string,
+     *     address?: string,
+     *     desc?: string
+     * } $data
+     * @return array{success: bool, message: string}
+     */
+    public function editContact(array $data): array
+    {
+        $requestData = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'options' => [
+                'ContactID' => $data['contact_id'],
+                'GroupID' => $data['group_id'] ?? 0,
+                'Mobile' => $data['mobile'] ?? '',
+                'FirstName' => $data['first_name'] ?? '',
+                'LastName' => $data['last_name'] ?? '',
+                'Email' => $data['email'] ?? '',
+                'Birthday' => $data['birthday'] ?? '',
+                'Anniversary' => $data['anniversary'] ?? '',
+                'Corporation' => $data['corporation'] ?? '',
+                'Job' => $data['job'] ?? '',
+                'Address' => $data['address'] ?? '',
+                'Desc' => $data['desc'] ?? '',
+            ],
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('EditContact', $requestData)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت ویرایش شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * حذف مخاطب
+     * متد remove از وب سرویس دفترچه تلفن
+     * 
+     * @param string $mobile شماره موبایل
+     * @return array{success: bool, message: string}
+     */
+    public function deleteContact(string $mobile): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'mobileNumber' => $mobile,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('RemoveContact', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        return [
+            'success' => $this->isSuccessful(),
+            'message' => $this->isSuccessful() ? 'مخاطب با موفقیت حذف شد' : $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت تعداد مخاطبین گروه
+     * 
+     * @param int $groupId شناسه گروه
+     * @return array{success: bool, count: int, message: string}
+     */
+    public function getContactsCount(int $groupId): array
+    {
+        $contacts = $this->getContacts($groupId, null, 0, 1);
+
+        return [
+            'success' => $contacts['success'],
+            'count' => $contacts['total'] ?? 0,
+            'message' => $contacts['message'],
+        ];
+    }
+
+    /**
+     * دریافت اطلاعات مناسبت‌های فرد
+     * متد getEvents از وب سرویس دفترچه تلفن
+     * 
+     * @param int $contactId شناسه مخاطب
+     * @return array{success: bool, events: array, message: string}
+     */
+    public function getEvents(int $contactId): array
+    {
+        $data = [
+            'username' => $this->username,
+            'password' => $this->password,
+            'contactId' => $contactId,
+        ];
+
+        $response = Http::baseUrl($this->baseUrlSoap)
+            ->asJson()
+            ->post('GetEvents', $data)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $events = json_decode($this->returnValue, true) ?? [];
+            return [
+                'success' => true,
+                'events' => $events,
+                'message' => 'اطلاعات مناسبت‌ها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'events' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * ارسال پیامک به گروه
+     * 
+     * @param int $groupId شناسه گروه
+     * @param string $message متن پیامک
+     * @param string|null $from شماره فرستنده
+     * @return array{success: bool, message_id: string|null, success_count: int, error?: string}
+     */
+    public function sendToGroup(int $groupId, string $message, ?string $from = null): array
+    {
+        $contacts = $this->getContacts($groupId);
+
+        if (!$contacts['success']) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => $contacts['message'],
+            ];
+        }
+
+        $mobiles = [];
+        foreach ($contacts['contacts'] as $contact) {
+            if (!empty($contact['MobileNumbers'])) {
+                $mobiles[] = $contact['MobileNumbers'];
+            }
+        }
+
+        if (empty($mobiles)) {
+            return [
+                'success' => false,
+                'message_id' => null,
+                'success_count' => 0,
+                'error' => 'هیچ مخاطبی در این گروه وجود ندارد',
+            ];
+        }
+
+        $result = $this->sendText($mobiles, $message, $from ?? $this->from);
+
+        return [
+            'success' => $result->isSuccessful(),
+            'message_id' => $result->getMessageId(),
+            'success_count' => $result->getSuccessCount(),
+            'error' => $result->getErrorMessage(),
+        ];
+    }
+
+    // ==================== متدهای غیرقابل پشتیبانی ====================
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function createGroup(string $name, ?string $description = null): array
+    {
+        return $this->addGroup($name, $description);
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function editGroup(string $groupId, string $name, ?string $description = null): array
+    {
+        throw new UnsupportedMethodException(
+            sprintf('Provider "%s" does not support editGroup method. Use addGroup and remove instead.', $this->getDriverName())
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function deleteGroup(string $groupId): array
+    {
+        throw new UnsupportedMethodException(
+            sprintf('Provider "%s" does not support deleteGroup method directly. Delete contacts first then group.', $this->getDriverName())
+        );
+    }
+
+    // ==================== متدهای خصوصی ====================
+
+    /**
+     * Process API response
+     */
+    private function processResponse($response): void
+    {
+        $this->apiStatusCode = $response->status();
+        $this->apiMessage = '';
+
+        $content = $response->body();
+
+        // بررسی می‌کنیم پاسخ JSON است یا خیر
+        $data = json_decode($content, true);
+
+        if (json_last_error() === JSON_ERROR_NONE && isset($data['Value'])) {
+            $this->returnValue = (string) $data['Value'];
+            $this->apiMessage = $data['RetStatus'] ?? '';
+        } else {
+            $this->returnValue = $content;
+        }
     }
 
     /**
@@ -214,6 +820,29 @@ final class MeliPayamakDriver extends Driver
         if (count($phones) !== 1) {
             throw UnsupportedMultiplePhonesException::make($this->getDriverName(), method: 'pattern');
         }
+    }
 
+    /**
+     * @param  array<mixed>  $variables
+     *
+     * @throws InvalidPatternStructureException
+     */
+    private function validatePatternVariables(array $variables): void
+    {
+        if (Arr::isList($variables)) {
+            throw new InvalidPatternStructureException(
+                sprintf('Provider "%s" only accepts pattern data as key-value pairs.', $this->getDriverName())
+            );
+        }
+    }
+
+    /**
+     * تبدیل شماره‌ها به فرمت API
+     *
+     * @param  list<string>  $phones
+     */
+    private function toApiPhones(array $phones): string
+    {
+        return implode(',', $phones);
     }
 }

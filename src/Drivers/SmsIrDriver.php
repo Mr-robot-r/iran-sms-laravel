@@ -28,13 +28,25 @@ final class SmsIrDriver extends Driver
      */
     private int $apiStatusCode;
 
+    /**
+     * The message returned from API
+     */
+    private string $apiMessage;
+
+    /**
+     * The data returned from API
+     */
+    private array $apiData;
+
     public function __construct(
         private readonly string $token,
         private readonly string $from,
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}
+     * دریافت اعتبار از متد credit
      */
     public function credit(): int
     {
@@ -43,6 +55,8 @@ final class SmsIrDriver extends Driver
             ->acceptJson()
             ->get('credit')
             ->throw();
+
+        $this->processResponse($response);
 
         return (int) $response->json('data');
     }
@@ -67,19 +81,16 @@ final class SmsIrDriver extends Driver
 
     /**
      * {@inheritdoc}
-     *
-     * @throws UnsupportedMultiplePhonesException
-     * @throws InvalidPatternStructureException
+     * ارسال با الگو از طریق متد send/verify
      */
     protected function sendPattern(array $phones, string $patternCode, array $variables, string $from): static
     {
         $this->validatePatternPhones($phones);
-
         $this->validatePatternVariables($variables);
 
         $data = [
             'mobile' => $phones[0],
-            'templateId' => $patternCode,
+            'templateId' => (int) $patternCode,
             'parameters' => $this->toApiPattern($variables),
         ];
 
@@ -90,6 +101,7 @@ final class SmsIrDriver extends Driver
 
     /**
      * {@inheritdoc}
+     * ارسال گروهی از طریق متد send/bulk
      */
     protected function sendText(array $phones, string $message, string $from): static
     {
@@ -106,6 +118,136 @@ final class SmsIrDriver extends Driver
     }
 
     /**
+     * دریافت وضعیت پیامک با شناسه
+     * متد send/receive
+     * 
+     * @param int $messageId شناسه پیامک
+     * @return array{success: bool, status: string|null, message: string}
+     */
+    public function getMessageStatus(int $messageId): array
+    {
+        $response = Http::baseUrl($this->baseUrl)
+            ->withHeaders($this->credentials())
+            ->acceptJson()
+            ->get('send/receive/' . $messageId)
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            return [
+                'success' => true,
+                'status' => $this->apiData['status'] ?? null,
+                'message' => 'وضعیت پیامک دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'status' => null,
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت لیست پیامک‌های دریافتی
+     * 
+     * @param int $page شماره صفحه
+     * @param int $pageSize تعداد در هر صفحه
+     * @return array{success: bool, messages: array, message: string}
+     */
+    public function getReceivedMessages(int $page = 1, int $pageSize = 50): array
+    {
+        $response = Http::baseUrl($this->baseUrl)
+            ->withHeaders($this->credentials())
+            ->acceptJson()
+            ->get('receive', [
+                'page' => $page,
+                'pageSize' => $pageSize,
+            ])
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $messages = $this->apiData['messages'] ?? [];
+            return [
+                'success' => true,
+                'messages' => $messages,
+                'message' => 'لیست پیامک‌های دریافتی دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'messages' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت لیست خطوط ارسال کننده
+     * 
+     * @return array{success: bool, lines: array, message: string}
+     */
+    public function getLines(): array
+    {
+        $response = Http::baseUrl($this->baseUrl)
+            ->withHeaders($this->credentials())
+            ->acceptJson()
+            ->get('line')
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $lines = $this->apiData['lines'] ?? [];
+            return [
+                'success' => true,
+                'lines' => $lines,
+                'message' => 'لیست خطوط دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'lines' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
+     * دریافت لیست الگوها
+     * 
+     * @return array{success: bool, templates: array, message: string}
+     */
+    public function getTemplates(): array
+    {
+        $response = Http::baseUrl($this->baseUrl)
+            ->withHeaders($this->credentials())
+            ->acceptJson()
+            ->get('template')
+            ->throw();
+
+        $this->processResponse($response);
+
+        if ($this->isSuccessful()) {
+            $templates = $this->apiData['templates'] ?? [];
+            return [
+                'success' => true,
+                'templates' => $templates,
+                'message' => 'لیست الگوها دریافت شد',
+            ];
+        }
+
+        return [
+            'success' => false,
+            'templates' => [],
+            'message' => $this->getErrorMessage(),
+        ];
+    }
+
+    /**
      * {@inheritdoc}
      */
     protected function isSuccessful(): bool
@@ -118,12 +260,16 @@ final class SmsIrDriver extends Driver
      */
     protected function getErrorMessage(): string
     {
+        if ($this->apiMessage) {
+            return $this->apiMessage;
+        }
+
         return match ($this->apiStatusCode) {
             1 => 'عملیات با موفقیت انجام شد',
             0 => 'مشکلی در سامانه رخ داده است، لطفا با پشتیبانی در تماس باشید',
-            10 => 'کلیدوب سرویس نامعتبر است شد',
+            10 => 'کلید وب سرویس نامعتبر است',
             11 => 'کلید وب سرویس غیرفعال است',
-            12 => 'کلیدوب‌ سرویس محدود به  IP های تعریف شده می‌باشد',
+            12 => 'کلید وب سرویس محدود به IP های تعریف شده می‌باشد',
             13 => 'حساب کاربری غیر فعال است',
             14 => 'حساب کاربری در حالت تعلیق قرار دارد',
             20 => 'تعداد درخواست بیشتر از حد مجاز است',
@@ -131,8 +277,8 @@ final class SmsIrDriver extends Driver
             102 => 'اعتبار کافی نمیباشد',
             103 => 'درخواست شما دارای متن(های) خالی است',
             104 => 'درخواست شما دارای موبایل(های) نادرست است',
-            105 => 'تعداد موبایل ها بیشتر از حد مجاز (100عدد)میباشد',
-            106 => 'تعداد متن ها بیشتر ازحد مجاز (100عدد) میباشد',
+            105 => 'تعداد موبایل ها بیشتر از حد مجاز (100 عدد) می‌باشد',
+            106 => 'تعداد متن ها بیشتر از حد مجاز (100 عدد) می‌باشد',
             107 => 'لیست موبایل ها خالی میباشد',
             108 => 'لیست متن ها خالی میباشد',
             109 => 'زمان ارسال نامعتبر میباشد',
@@ -141,11 +287,11 @@ final class SmsIrDriver extends Driver
             112 => 'رکوردی برای حذف یافت نشد',
             113 => 'قالب یافت نشد',
             114 => 'طول رشته مقدار پارامتر، بیش از حد مجاز (25 کاراکتر) می‌باشد',
-            115 => 'شماره موبایل ها  در لیست سیاه سامانه می‌باشند',
+            115 => 'شماره موبایل ها در لیست سیاه سامانه می‌باشند',
             116 => 'نام پارامتر نمی‌تواند خالی باشد',
             117 => 'متن ارسال شده مورد تایید نمی‌باشد',
             118 => 'تعداد پیام ها بیش از حد مجاز می باشد.',
-            119 => 'به منظور استفاده از قالب‌ شخصی سازی شده پلن خود را ارتقا دهید',
+            119 => 'به منظور استفاده از قالب شخصی سازی شده پلن خود را ارتقا دهید',
             123 => 'خط ارسال‌کننده نیاز به فعال‌سازی دارد',
             default => "خطای ناشناخته با کد {$this->apiStatusCode} رخ داده است"
         };
@@ -154,14 +300,109 @@ final class SmsIrDriver extends Driver
     /**
      * {@inheritdoc}
      */
-    protected function getErrorCode(): int
+    protected function getErrorCode(): string|int
     {
         return $this->apiStatusCode;
     }
 
+    // ==================== متدهای غیرقابل پشتیبانی (گروه و مخاطب) ====================
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function createGroup(string $name, ?string $description = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'createGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function editGroup(string $groupId, string $name, ?string $description = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'editGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function deleteGroup(string $groupId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'deleteGroup');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getGroups(): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getGroups');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function addContact(array $contact): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'addContact');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getContacts(?string $groupId = null, int $page = 1, int $perPage = 50): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getContacts');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function deleteContact(string $contactId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'deleteContact');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function getContactsCount(string $groupId): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'getContactsCount');
+    }
+
+    /**
+     * {@inheritdoc}
+     * 
+     * @throws UnsupportedMethodException
+     */
+    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
+    {
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'sendToGroup');
+    }
+
+    // ==================== متدهای خصوصی ====================
+
     /**
      * Executes the API request to the specified endpoint with given data.
      *
+     * @param  string  $endpoint
      * @param  array<string, mixed>  $data
      */
     private function execute(string $endpoint, array $data): void
@@ -172,7 +413,27 @@ final class SmsIrDriver extends Driver
             ->post($endpoint, $data)
             ->throw();
 
+        $this->processResponse($response);
+    }
+
+    /**
+     * Process API response
+     */
+    private function processResponse($response): void
+    {
         $this->apiStatusCode = (int) $response->json('status');
+        $this->apiMessage = $response->json('message') ?? '';
+        $this->apiData = $response->json('data') ?? [];
+
+        if ($this->isSuccessful() && isset($this->apiData['messageId'])) {
+            $this->setMessageId((string) $this->apiData['messageId']);
+            $this->setSuccessCount(1);
+        }
+
+        if ($this->isSuccessful() && isset($this->apiData['bulkId'])) {
+            $this->setMessageId((string) $this->apiData['bulkId']);
+            $this->setSuccessCount(count($this->apiData['mobiles'] ?? []));
+        }
     }
 
     /**
@@ -196,7 +457,7 @@ final class SmsIrDriver extends Driver
     private function toApiPattern(array $variables): array
     {
         return collect($variables)
-            ->map(fn (mixed $value, string $key): array => [
+            ->map(fn(mixed $value, string $key): array => [
                 'name' => $key,
                 'value' => $value,
             ])
@@ -214,7 +475,6 @@ final class SmsIrDriver extends Driver
         if (count($phones) !== 1) {
             throw UnsupportedMultiplePhonesException::make($this->getDriverName(), method: 'pattern');
         }
-
     }
 
     /**
