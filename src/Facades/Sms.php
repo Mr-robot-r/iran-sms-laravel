@@ -21,6 +21,21 @@ use UnexpectedValueException;
  * @method static \Mastertek\IranSms\Contracts\Sms pattern(string|list<string> $phones, string $patternCode, array<mixed> $variables) Create Pattern SMS instance
  * @method static \Mastertek\IranSms\Contracts\Sms text(string|list<string> $phones, string $message) Create regular text SMS instance
  * @method static \Mastertek\IranSms\Contracts\Sms from(string $from) Set the sender number for the SMS
+ * 
+ * ==================== Phonebook Group Methods ====================
+ * 
+ * @method static array createGroup(string $name, string|null $description = null) Create a new group
+ * @method static array editGroup(string $groupId, string $name, string|null $description = null) Edit an existing group
+ * @method static array deleteGroup(string $groupId) Delete a group
+ * @method static array getGroups() Get all groups list
+ * 
+ * ==================== Phonebook Contact Methods ====================
+ * 
+ * @method static array addContact(array $contact) Add a new contact
+ * @method static array getContacts(string|null $groupId = null, int $page = 1, int $perPage = 50) Get contacts list
+ * @method static array deleteContact(string $contactId) Delete a contact
+ * @method static array getContactsCount(string $groupId) Get contacts count in a group
+ * @method static array sendToGroup(string $groupId, string $message, string|null $from = null) Send SMS to a specific group
  *
  * @see \Mastertek\IranSms\Abstracts\Driver
  */
