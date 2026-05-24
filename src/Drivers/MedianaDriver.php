@@ -50,7 +50,8 @@ final class MedianaDriver extends Driver
     public function __construct(
         private readonly string $token,
         private readonly string $from,
-    ) {}
+    ) {
+    }
 
     // ==================== متدهای اجباری کلاس Driver ====================
 
@@ -242,7 +243,7 @@ final class MedianaDriver extends Driver
 
         if ($this->isSuccessful()) {
             $groupsData = $this->apiData ?? [];
-            $groups = array_map(function($item) {
+            $groups = array_map(function ($item) {
                 return [
                     'GroupID' => (string) ($item['id'] ?? ''),
                     'Name' => $item['title'] ?? '',
@@ -333,7 +334,7 @@ final class MedianaDriver extends Driver
             $contactsData = $this->apiData ?? [];
             $total = $this->apiMeta['total'] ?? count($contactsData);
 
-            $contacts = array_map(function($item) {
+            $contacts = array_map(function ($item) {
                 return [
                     'ContactID' => (string) ($item['id'] ?? ''),
                     'FirstName' => $item['pre'] ?? '',
@@ -397,7 +398,7 @@ final class MedianaDriver extends Driver
         if ($this->isSuccessful()) {
             $groupsData = $this->apiData ?? [];
             $count = 0;
-            
+
             foreach ($groupsData as $group) {
                 if ((string) ($group['id'] ?? '') === $groupId) {
                     $count = $group['count'] ?? 0;
@@ -741,7 +742,7 @@ final class MedianaDriver extends Driver
     /**
      * Get driver name for exceptions
      */
-    private function getDriverName(): string
+    protected function getDriverName(): string
     {
         return 'Mediana';
     }

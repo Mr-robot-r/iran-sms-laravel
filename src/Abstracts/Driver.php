@@ -204,6 +204,14 @@ abstract class Driver implements Sms
     // ==================== متدهای کمکی (اختیاری) ====================
 
     /**
+     * Get driver name for exceptions and logging
+     */
+    protected function getDriverName(): string
+    {
+        return static::class;
+    }
+    
+    /**
      * Set message ID (called by drivers)
      */
     protected function setMessageId(?string $id): static

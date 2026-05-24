@@ -71,7 +71,7 @@ final class AmootSmsDriver extends Driver
     /**
      * Get driver name for exceptions
      */
-    private function getDriverName(): string
+    protected function getDriverName(): string
     {
         return 'AmootSms';
     }

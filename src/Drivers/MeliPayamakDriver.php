@@ -58,7 +58,7 @@ final class MelipayamakDriver extends Driver
     /**
      * Get driver name for exceptions
      */
-    private function getDriverName(): string
+    protected function getDriverName(): string
     {
         return 'Melipayamak';
     }
@@ -232,8 +232,9 @@ final class MelipayamakDriver extends Driver
      */
     public function editGroup(string $groupId, string $name, ?string $description = null): array
     {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support editGroup method.', $this->getDriverName())
+        throw UnsupportedMethodException::make(
+            $this->getDriverName(),
+            "editGroup"
         );
     }
 
@@ -244,8 +245,9 @@ final class MelipayamakDriver extends Driver
      */
     public function deleteGroup(string $groupId): array
     {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support deleteGroup method.', $this->getDriverName())
+        throw UnsupportedMethodException::make(
+            $this->getDriverName(),
+            "deleteGroup"
         );
     }
 
@@ -406,7 +408,7 @@ final class MelipayamakDriver extends Driver
         // در ملی پیامک حذف بر اساس شماره موبایل است نه contact_id
         // برای این کار ابتدا باید مخاطب را پیدا کنیم
         $contacts = $this->getContacts(null, 1, 1000);
-        
+
         if (!$contacts['success']) {
             return [
                 'success' => false,

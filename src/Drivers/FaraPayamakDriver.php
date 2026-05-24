@@ -503,13 +503,12 @@ final class FaraPayamakDriver extends Driver
      * دریافت اطلاعات دفترچه تلفن
      * متد GetContacts
      * 
-     * @param int $groupId شناسه گروه
-     * @param string|null $keyword کلمه کلیدی
+     * @param string|null $groupId شناسه گروه
      * @param int $from شماره ردیف شروع
      * @param int $count تعداد درخواستی
      * @return array{success: bool, contacts: array, message: string}
      */
-    public function getContacts(int $groupId = 0, ?string $keyword = null, int $from = 0, int $count = 50): array
+    public function getContacts(?string $groupId = null, int $from = 0, int $count = 50): array
     {
         $data = array_merge($this->credentials(), [
             'GroupId' => $groupId,
@@ -648,12 +647,12 @@ final class FaraPayamakDriver extends Driver
     /**
      * دریافت تعداد مخاطبین گروه (با دریافت لیست و شمارش)
      * 
-     * @param int $groupId شناسه گروه
+     * @param string $groupId شناسه گروه
      * @return array{success: bool, count: int, message: string}
      */
-    public function getContactsCount(int $groupId): array
+    public function getContactsCount(string $groupId): array
     {
-        $contacts = $this->getContacts($groupId, null, 0, 1000);
+        $contacts = $this->getContacts($groupId, 0, 1000);
 
         return [
             'success' => $contacts['success'],
@@ -701,12 +700,12 @@ final class FaraPayamakDriver extends Driver
     /**
      * ارسال پیامک به گروه
      * 
-     * @param int $groupId شناسه گروه
+     * @param string $groupId شناسه گروه
      * @param string $message متن پیامک
      * @param string|null $from شماره فرستنده
      * @return array{success: bool, message_id: string|null, success_count: int, error?: string}
      */
-    public function sendToGroup(int $groupId, string $message, ?string $from = null): array
+    public function sendToGroup(string $groupId, string $message, ?string $from = null): array
     {
         $contacts = $this->getContacts($groupId);
 
@@ -850,9 +849,7 @@ final class FaraPayamakDriver extends Driver
      */
     public function editGroup(string $groupId, string $name, ?string $description = null): array
     {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support editGroup method. Use addGroup instead.', $this->getDriverName())
-        );
+        throw UnsupportedMethodException::make($this->getDriverName(), 'editGroup');
     }
 
     /**
@@ -862,9 +859,7 @@ final class FaraPayamakDriver extends Driver
      */
     public function deleteGroup(string $groupId): array
     {
-        throw new UnsupportedMethodException(
-            sprintf('Provider "%s" does not support deleteGroup method.', $this->getDriverName())
-        );
+        throw  UnsupportedMethodException::make($this->getDriverName(), 'deleteGroup');
     }
 
     // ==================== متدهای خصوصی ====================

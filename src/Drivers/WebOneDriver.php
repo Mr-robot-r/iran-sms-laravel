@@ -320,27 +320,27 @@ final class WebOneDriver extends Driver
     // ==================== متدهای مدیریت دفترچه تلفن ====================
 
     /**
-     * اضافه کردن شماره به دفترچه تلفن
-     * متد ApplyContact
-     * 
-     * @param string $mobile شماره موبایل (اجباری)
-     * @param string|null $firstName نام (اختیاری)
-     * @param string|null $lastName نام خانوادگی (اختیاری)
-     * @return array{success: bool, message: string}
+     * {@inheritdoc}
+     * اضافه کردن مخاطب جدید - متد addContact
      */
-    public function addContact(string $mobile, ?string $firstName = null, ?string $lastName = null): array
+    public function addContact(array $contact): array
     {
         $data = [
-            'Mobile' => $mobile,
+            'FirstName' => $contact['first_name'] ?? '',
+            'LastName' => $contact['last_name'] ?? '',
+            'Corporation' => $contact['corporation'] ?? '',
+            'MobileNumbers' => $contact['mobile'],
+            'PhoneNumbers' => $contact['phone'] ?? '',
+            'FaxNumbers' => $contact['fax'] ?? '',
+            'BirthDate' => $contact['birth_date'] ?? 0,
+            'Email' => $contact['email'] ?? '',
+            'Gender' => $contact['gender'] ?? 0,
+            'Address' => $contact['address'] ?? '',
+            'PostalCode' => $contact['postal_code'] ?? '',
+            'Descriptions' => $contact['description'] ?? '',
+            'welcomeText' => $contact['welcome_text'] ?? '',
+            'GroupID' => $contact['group_id'],
         ];
-
-        if ($firstName) {
-            $data['FirstName'] = $firstName;
-        }
-        if ($lastName) {
-            $data['LastName'] = $lastName;
-        }
-
         $response = Http::withHeaders($this->credentials())
             ->baseUrl($this->baseUrl)
             ->post('User/ApplyContact', $data)

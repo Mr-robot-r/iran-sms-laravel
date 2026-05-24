@@ -22,7 +22,7 @@ final class UnsupportedMethodException extends LogicException
      * @param  'otp'|'text'|'pattern'  $method
      * @param  'otp'|'text'|'pattern'  $alternative
      */
-    public static function make(string $driver, string $method, string $alternative): self
+    public static function make(string $driver, string $method, ?string $alternative = null): self
     {
         $message = sprintf('Provider "%s" does not support sending "%s" message, please use "%s" method instead.', $driver, $method, $alternative);
 
