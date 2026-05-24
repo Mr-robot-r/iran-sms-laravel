@@ -39,7 +39,7 @@ final class IranSmsServiceProvider extends PackageServiceProvider
                 $command
                     ->publishConfigFile()
                     ->publishMigrations()
-                    ->askToStarRepoOnGitHub('amyavari/iran-sms-laravel');
+                    ->askToStarRepoOnGitHub('mastertek/iran-sms-laravel');
             });
     }
 
@@ -57,10 +57,6 @@ final class IranSmsServiceProvider extends PackageServiceProvider
             fn(): MeliPayamakDriver => new MeliPayamakDriver(...config()->array('iran-sms.providers.meli_payamak'))
         );
 
-        $this->app->bind(
-            PayamResanDriver::class,
-            fn(): PayamResanDriver => new PayamResanDriver(...config()->array('iran-sms.providers.payam_resan'))
-        );
 
         $this->app->bind(
             KavenegarDriver::class,

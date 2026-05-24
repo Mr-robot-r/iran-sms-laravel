@@ -22,6 +22,7 @@ use Mastertek\IranSms\Drivers\SmsIrDriver;
 use Mastertek\IranSms\Drivers\WebOneDriver;
 use Illuminate\Support\Manager;
 use InvalidArgumentException;
+use Mastertek\IranSms\Drivers\ParsGreenDriver;
 use Override;
 
 /**
@@ -82,10 +83,11 @@ final class SmsManager extends Manager
         return $this->container->make(MeliPayamakDriver::class);
     }
 
-    protected function createPayamResanDriver(): PayamResanDriver
+        protected function createParsGreenDriver(): ParsGreenDriver
     {
-        return $this->container->make(PayamResanDriver::class);
+        return $this->container->make(ParsGreenDriver::class);
     }
+
 
     protected function createKavenegarDriver(): KavenegarDriver
     {
@@ -140,6 +142,6 @@ final class SmsManager extends Manager
     private function mustBeFresh(string $driver): bool
     {
         return isset($this->drivers[$driver])
-            && ! $this->drivers[$driver] instanceof FakeDriver;
+            && !$this->drivers[$driver] instanceof FakeDriver;
     }
 }
