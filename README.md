@@ -402,7 +402,7 @@ Thank you for considering contributing to the Iran SMS Laravel! The contribution
 
 ## License
 
-**Iran SMS Laravel** was created by **[Ali Mohammad Yavari](https://www.linkedin.com/in/ali-m-yavari/)** under the **[MIT license](https://opensource.org/licenses/MIT)**.
+**Iran SMS Laravel** was created by **[Ali Mohammad Yavari](https://github.com/Mr-robot-r/)** under the **[MIT license](https://opensource.org/licenses/MIT)**.
 
 <!-- Links -->
 
