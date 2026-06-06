@@ -39,7 +39,8 @@ final class ParsGreenDriver extends Driver
     public function __construct(
         private readonly string $token,
         private readonly string $from,
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}
@@ -155,7 +156,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         if ($success) {
             return [
                 'success' => true,
@@ -191,7 +192,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         return [
             'success' => $success,
             'message' => $success ? 'گروه با موفقیت ویرایش شد' : ($response->json('R_Error') ?? 'خطا در ویرایش گروه'),
@@ -213,7 +214,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         return [
             'success' => $success,
             'message' => $success ? 'گروه با موفقیت حذف شد' : ($response->json('R_Error') ?? 'خطا در حذف گروه'),
@@ -233,7 +234,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         if ($success) {
             return [
                 'success' => true,
@@ -281,7 +282,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         if ($success) {
             return [
                 'success' => true,
@@ -316,18 +317,18 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         if ($success) {
             $contacts = $response->json('Data') ?? [];
-            
+
             // اگر groupId مشخص شده، فیلتر کنیم
             if ($groupId && !empty($contacts)) {
-                $contacts = array_filter($contacts, function($contact) use ($groupId) {
+                $contacts = array_filter($contacts, function ($contact) use ($groupId) {
                     return ($contact['GroupID'] ?? '') === $groupId;
                 });
                 $contacts = array_values($contacts);
             }
-            
+
             return [
                 'success' => true,
                 'contacts' => $contacts,
@@ -359,7 +360,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         return [
             'success' => $success,
             'message' => $success ? 'مخاطب با موفقیت حذف شد' : ($response->json('R_Error') ?? 'خطا در حذف مخاطب'),
@@ -381,7 +382,7 @@ final class ParsGreenDriver extends Driver
             ->throw();
 
         $success = $response->json('R_Success') ?? false;
-        
+
         if ($success) {
             return [
                 'success' => true,
@@ -405,7 +406,7 @@ final class ParsGreenDriver extends Driver
     {
         // ابتدا لیست مخاطبین گروه را بگیر
         $contacts = $this->getContacts($groupId, 1, 1000);
-        
+
         if (!$contacts['success']) {
             return [
                 'success' => false,
@@ -434,7 +435,7 @@ final class ParsGreenDriver extends Driver
 
         // ارسال پیامک به همه شماره‌ها
         $this->sendText($mobiles, $message, $from ?? $this->from);
-        
+
         return [
             'success' => $this->isSuccessful(),
             'message_id' => $this->getMessageId(),
@@ -478,7 +479,8 @@ final class ParsGreenDriver extends Driver
     private function credentials(): array
     {
         return [
-            'ApiKey' => $this->token,
+            'Authorization' => 'basic apikey:' . $this->token,
+            'Accept' => 'application/json',
         ];
     }
 
