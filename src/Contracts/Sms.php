@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Mastertek\IranSms\Contracts;
 
 /**
- * Public API for interacting with the amyavari/iran-sms-laravel package
+ * Public API for interacting with the mastertek/iran-sms-laravel package
  */
 interface Sms
 {

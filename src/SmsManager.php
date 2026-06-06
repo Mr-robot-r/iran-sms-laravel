@@ -83,7 +83,7 @@ final class SmsManager extends Manager
         return $this->container->make(MeliPayamakDriver::class);
     }
 
-        protected function createParsGreenDriver(): ParsGreenDriver
+        protected function createParsgreenDriver(): ParsGreenDriver
     {
         return $this->container->make(ParsGreenDriver::class);
     }
