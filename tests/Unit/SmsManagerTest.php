@@ -22,6 +22,7 @@ use Mastertek\IranSms\SmsManager;
 use Mastertek\IranSms\Tests\Fixtures\ConcreteTestDriver;
 use Mastertek\IranSms\Tests\TestCase;
 use Illuminate\Support\Facades\Config;
+use Mastertek\IranSms\Drivers\ParsGreenDriver;
 use PHPUnit\Framework\Attributes\Test;
 
 final class SmsManagerTest extends TestCase
@@ -79,14 +80,6 @@ final class SmsManagerTest extends TestCase
         $sms = $this->smsManager()->provider('meli_payamak');
 
         $this->assertInstanceOf(MeliPayamakDriver::class, $sms);
-    }
-
-    #[Test]
-    public function it_returns_payam_resan_instance(): void
-    {
-        $sms = $this->smsManager()->provider('payam_resan');
-
-        $this->assertInstanceOf(PayamResanDriver::class, $sms);
     }
 
     #[Test]
@@ -167,6 +160,14 @@ final class SmsManagerTest extends TestCase
         $sms = $this->smsManager()->provider('mediana');
 
         $this->assertInstanceOf(MedianaDriver::class, $sms);
+    }
+
+    #[Test]
+    public function it_returns_parsgreen_instance(): void
+    {
+        $sms = $this->smsManager()->provider('parsgreeb');
+
+        $this->assertInstanceOf(ParsGreenDriver::class, $sms);
     }
 
     // -----------------
