@@ -272,7 +272,7 @@ final class ParsGreenDriver extends Driver
             'PostalCode' => $contact['postal_code'] ?? '',
             'Descriptions' => $contact['description'] ?? '',
             'welcomeText' => $contact['welcome_text'] ?? '',
-            'GroupID' => $contact['group_id'],
+            'GroupID' => [(string) $contact['group_id']],
         ];
 
         $response = Http::baseUrl($this->baseUrl)
