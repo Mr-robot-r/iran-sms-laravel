@@ -8,6 +8,7 @@ use Mastertek\IranSms\Abstracts\Driver;
 use Mastertek\IranSms\Exceptions\InvalidPatternStructureException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Http;
+use Mastertek\IranSms\Exceptions\UnsupportedMethodException;
 
 /**
  * @internal
@@ -85,15 +86,7 @@ final class ParsGreenDriver extends Driver
      */
     protected function sendPattern(array $phones, string $patternCode, array $variables, string $from): static
     {
-        $this->validatePatternVariables($variables);
-
-        // ساخت متن نهایی از الگو (جایگزینی %% با مقادیر)
-        $message = $patternCode;
-        foreach ($variables as $value) {
-            $message = preg_replace('/%%/', (string) $value, $message, 1);
-        }
-
-        return $this->sendText($phones, $message, $from);
+        throw UnsupportedMethodException::make($this->getDriverName(), method: 'pattern');
     }
 
     /**
