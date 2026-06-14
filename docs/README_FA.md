@@ -1,214 +1,231 @@
-# ارسال پیامک با سرویس دهنده های ایرانی با لاراول
+# Iran SMS Laravel
 
-یک روش ساده و راحت برای ارسال پیامک از طریق ارائه‌دهندگان پیامک ایرانی.
 
-## پیش‌نیازها
+![PHP Version](https://img.shields.io/packagist/php-v/amyavari/iran-sms-laravel)
+![Laravel Version](https://img.shields.io/packagist/dependency-v/amyavari/iran-sms-laravel/illuminate%2Fcontracts?label=Laravel)
+![Packagist Version](https://img.shields.io/packagist/v/amyavari/iran-sms-laravel?label=version)
+![Packagist Downloads](https://img.shields.io/packagist/dt/amyavari/iran-sms-laravel)
+![Packagist License](https://img.shields.io/packagist/l/amyavari/iran-sms-laravel)
+![Tests](https://img.shields.io/github/actions/workflow/status/amyavari/iran-sms-laravel/tests.yml?label=tests)
 
-- نسخه PHP `8.2` یا بالاتر
-- نسخه Laravel `^11.44`, `^12.4` یا `^13.0`
+A simple and convenient way to send SMS through Iranian SMS providers.
 
-## فهرست ارائه‌دهندگان پیامک
+To view the Persian documentation, please refer to [README_FA.md](./docs/README_FA.md).
 
-| نسخه  | کلید ارائه‌دهنده | وب‌سایت ارائه‌دهنده | نام فارسی ارائه‌دهنده | نام انگلیسی ارائه‌دهنده |
-| ----- | ---------------- | ------------------- | --------------------- | ----------------------- |
-| 1.0.0 | `sms_ir`         | [sms.ir]            | اس ام اس دات آی آر    | SMS.ir                  |
-| 1.0.0 | `meli_payamak`   | [melipayamak.com]   | ملی پیامک             | Meli Payamak            |
-| 1.0.0 | `payam_resan`    | [payam-resan.com]   | پیام رسان             | Payam Resan             |
-| 1.0.0 | `kavenegar`      | [kavenegar.com]     | کاوه نگار             | Kavenegar               |
-| 1.0.0 | `faraz_sms`      | [farazsms.com]      | فراز اس ام اس         | Faraz SMS               |
-| 1.0.0 | `raygan_sms`     | [raygansms.com]     | رایگان اس ام اس       | Raygan SMS              |
-| 1.1.0 | `web_one`        | [webone-sms.com]    | وب وان                | Web One SMS             |
-| 1.1.0 | `amoot_sms`      | [amootsms.com]      | پیامک آموت            | Amoot SMS               |
-| 1.2.0 | `fara_payamak`   | [farapayamak.ir]    | فراپیامک              | Fara Payamak            |
-| 1.2.0 | `ghasedak`       | [ghasedak.me]       | قاصدک                 | Ghasedak                |
-| 1.2.0 | `behin_payam`    | [behinpayam.com]    | بهین پیام             | Behin Payam             |
-| 1.2.0 | `asanak`         | [asanak.com]        | آسانک                 | Asanak                  |
-| 1.5.0 | `mediana`        | [mediana.ir]        | مدیانا                | Mediana                 |
+برای مشاهده راهنمای فارسی، لطفاً به فایل [README_FA.md](./docs/README_FA.md) مراجعه کنید.
+
+## Requirements
+
+- PHP version `8.2` or higher
+- Laravel `^11.44`, `^12.4`, or `^13.0`
+
+## List of Available SMS Providers
+
+| Provider Name (EN) | Provider Name (FA) | Provider Website  | Provider Key   | Version |
+| ------------------ | ------------------ | ----------------- | -------------- | ------- |
+| SMS.ir             | اس ام اس دات آی آر | [sms.ir]          | `sms_ir`       | 1.0.0   |
+| Meli Payamak       | ملی پیامک          | [melipayamak.com] | `meli_payamak` | 1.0.0   |
+| Payam Resan        | پیام رسان          | [payam-resan.com] | `payam_resan`  | 1.0.0   |
+| Kavenegar          | کاوه نگار          | [kavenegar.com]   | `kavenegar`    | 1.0.0   |
+| Faraz SMS          | فراز اس ام اس      | [farazsms.com]    | `faraz_sms`    | 1.0.0   |
+| Raygan SMS         | رایگان اس ام اس    | [raygansms.com]   | `raygan_sms`   | 1.0.0   |
+| Web One SMS        | وب وان             | [webone-sms.com]  | `web_one`      | 1.0.0   |
+| Amoot SMS          | پیامک آموت         | [amootsms.com]    | `amoot_sms`    | 1.0.0   |
+| Fara Payamak       | فراپیامک           | [farapayamak.ir]  | `fara_payamak` | 1.0.0   |
+| Ghasedak           | قاصدک              | [ghasedak.me]     | `ghasedak`     | 1.0.0   |
+| Asanak             | آسانک              | [asanak.com]      | `asanak`       | 1.0.0   |
+| Mediana            | مدیانا             | [mediana.ir]      | `mediana`      | 1.0.0   |
+| ParsGreen            | پارس گرین             | [http://parsgreen.ir/]      | `parsgreen`      | 1.0.0   |
 
 > [!CAUTION]
-> هر ارائه‌دهنده قوانین خاص خود را برای ارسال پیامک دارد. لطفاً فایل [providers_note_fa.md](./providers_note_fa.md) را بررسی کنید.
+> Providers have different rules for sending SMS messages. Please check [providers_note_en.md](./docs/providers_note_en.md).
 
-## منو
+## Table of Content
 
-- [نصب](#نصب)
-- [انتشار فایل‌های Vendor](#انتشار-فایلهای-vendor)
-- [پیکربندی](#پیکربندی)
-- [استفاده](#استفاده)
-  - [ایجاد پیامک](#ایجاد-پیامک)
-  - [تغییر شماره فرستنده](#تغییر-شماره-فرستنده)
-  - [لاگ‌گیری خودکار](#لاگ‌گیری-خودکار)
-  - [ارسال پیامک](#ارسال-پیامک)
-  - [بررسی وضعیت ارسال](#بررسی-وضعیت-ارسال)
-  - [دریافت اعتبار حساب](#دریافت-اعتبار-حساب)
-- [استفاده با صف‌ها و نوتیفیکیشن‌ها](#استفاده-با-صفها-و-نوتیفیکیشنها)
-- [تست](#تست)
+- [Installation](#installation)
+- [Publish Vendor File](#publish-vendor-files)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  - [Creating an SMS Instance](#creating-an-sms-instance)
+  - [Changing the Sender Number at Runtime](#changing-the-sender-number-at-runtime)
+  - [Automatic Logging](#automatic-logging)
+  - [Sending SMS](#sending-sms)
+  - [Checking Sending Status](#checking-sending-status)
+  - [Get Credit](#get-credit)
+- [Working with Queues and Notifications](#working-with-queues-and-notifications)
+- [Testing](#testing)
+- [Contributing](#contributing)
 
-## نصب
+## Installation
 
-برای نصب بسته از طریق Composer دستور زیر را اجرا کنید:
+To install the package via Composer, run:
 
 ```bash
-composer require amyavari/iran-sms-laravel
+composer require mastertek/iran-sms-laravel
 ```
 
-## انتشار فایل‌های Vendor
+## Publish Vendor Files
 
-### انتشار همه فایل‌ها
+### Publish All Files
 
-برای انتشار تمام فایل‌های vendor (پیکربندی و دیتابیس):
+To publish all vendor files (config and migrations):
 
 ```bash
 php artisan iran-sms:install
 ```
 
-**نکته:** برای ساخت جدول‌ها از طریق فایل های دیابیس:
+**Note:** To create tables from migrations:
 
 ```bash
 php artisan migrate
 ```
 
-### انتشار فایل‌های خاص
+### Publish Specific Files
 
-برای انتشار فقط فایل پیکربندی:
+To publish only the config file:
 
 ```bash
 php artisan vendor:publish --tag=iran-sms-config
 ```
 
-برای انتشار فقط فایل دیتابیس:
+To publish only the migration file:
 
 ```bash
 php artisan vendor:publish --tag=iran-sms-migrations
 ```
 
-**نکته:** برای ساخت جدول‌ها از طریق فایل های دیتابیس:
+**Note:** To create tables from migrations:
 
 ```bash
 php artisan migrate
 ```
 
-## پیکربندی
+## Configuration
 
-### پیکربندی برای استفاده از یک ارائه دهنده
+### Single Provider Setup
 
-برای تنظیم یک ارائه‌دهنده پیامک، موارد زیر را به فایل `.env` اضافه کنید:
+To configure a single SMS provider, add the following to your `.env` file:
 
 ```env
-# ارائه‌دهنده پیش‌فرض
+# Default provider
 SMS_PROVIDER=<default_provider>
 
-# اگر ارائه‌دهنده از نام کاربری و رمز عبور استفاده می‌کند
+# If provider uses username and password
 SMS_USERNAME=<username>
 SMS_PASSWORD=<password>
 
-# اگر ارائه‌دهنده از توکن استفاده می‌کند
+# If provider uses an API token
 SMS_TOKEN=<api_token>
 
-# شماره فرستنده پیش‌فرض
+# Default sender number
 SMS_FROM=<default_sender_number>
 ```
 
-**نکته:** برای `SMS_PROVIDER` از ستون `کلید ارائه‌دهنده` در [فهرست ارائه‌دهندگان پیامک](#فهرست-ارائه‌دهندگان-پیامک) استفاده کنید.
+**Note:** For the `SMS_PROVIDER`, refer to the `Provider Key` column in the [List of Available SMS Providers](#list-of-available-sms-providers).
 
-### پیکربندی برای استفاده از چند ارائه دهنده به صورت همزمان
+### Multiple Provider Setup
 
-پس از انتشار فایل پیکربندی (بخش [انتشار فایل‌های Vendor](#انتشار-فایلهای-vendor)) می‌توانید متغیرهای جداگانه برای هر ارائه‌دهنده تعریف کرده و در فایل `.env` تنظیم نمایید.
+After publishing the config file (see [Publish Vendor Files](#publish-vendor-files)), you can customize the environment variable names for each provider you want to use. Then, define those variables in your `.env` file.
 
-مثال برای ارائه‌دهنده‌ی `trez`:
+For example, to configure the `trez` provider:
 
 ```php
 'providers' => [
 
     'trez' => [
-        'username' => env('SMS_TREZ_USERNAME', ''), // قبلی: env('SMS_USERNAME', '')
-        'password' => env('SMS_TREZ_PASSWORD', ''), // قبلی: env('SMS_PASSWORD', '')
-        'token'    => env('SMS_TREZ_TOKEN', ''),    // قبلی: env('SMS_TOKEN', '')
-        'from'     => env('SMS_TREZ_FROM', ''),     // قبلی: env('SMS_FROM', '')
+        'username' => env('SMS_TREZ_USERNAME', ''), // Previously: env('SMS_USERNAME', '')
+        'password' => env('SMS_TREZ_PASSWORD', ''), // Previously: env('SMS_PASSWORD', '')
+        'token'    => env('SMS_TREZ_TOKEN', ''),    // Previously: env('SMS_TOKEN', '')
+        'from'     => env('SMS_TREZ_FROM', ''),     // Previously: env('SMS_FROM', '')
     ],
 
-    // ساختار بالا را برای دیگر ارائه‌دهندگان تکرار کنید
+    // Repeat this structure for any other providers you want to configure
 ],
 ```
 
-و سپس متغیرهای زیر را در فایل `.env` تعریف کنید:
+Define the corresponding variables in your `.env` file:
 
 ```env
 SMS_TREZ_USERNAME=<your_username>
 SMS_TREZ_PASSWORD=<your_password>
 SMS_TREZ_TOKEN=<your_token>
 SMS_TREZ_FROM=<your_sender_number>
+
+# Repeat for other providers you defined
 ```
 
-## استفاده
+## Usage
 
-**نکته:** این بسته از chain کردن متدها به‌صورت fluent پشتیبانی می‌کند، مانند:
-`Sms::provider()->otp()->log()->send();`
-اما برای سادگی، در این راهنما از نمونه‌های مجزا استفاده شده است.
+**Note:** This package supports fluent method chaining like `Sms::provider()->otp()->log()->send();`, but for simplicity, this manual demonstrates usage with separate instances.
 
-### ایجاد پیامک
+### Creating an SMS Instance
 
-برای ایجاد یک پیامک می توانید از کلاس Facade این پکیج استفاده کنید:
+You can create an SMS instance using the facade provided by the package:
 
 ```php
 use Mastertek\IranSms\Facades\Sms;
 
-// با استفاده از ارائه‌دهنده پیش‌فرض
+// Using the default provider
 $sms = Sms::otp(string $phone, string $message);
 $sms = Sms::text(string|array $phones, string $message);
 $sms = Sms::pattern(string|array $phones, string $patternCode, array $variables);
 
-// با استفاده از ارائه‌دهنده خاص
+// Using a specific provider
 $sms = Sms::provider(string $provider)->otp(...);
 $sms = Sms::provider(string $provider)->text(...);
 $sms = Sms::provider(string $provider)->pattern(...);
 ```
 
-**نکته:** برای `$provider` از ستون `کلید ارائه‌دهنده` در [فهرست ارائه‌دهندگان پیامک](#فهرست-ارائه‌دهندگان-پیامک) استفاده کنید.
+**Note:** For the `$provider` name, refer to the `Provider Key` column in the [List of Available SMS Providers](#list-of-available-sms-providers).
 
-### تغییر شماره فرستنده
+### Changing the Sender Number at Runtime
 
-شما می توانید در هنگام ایجاد پیامک، شماره ای به غیر از شماره دیفالت `SMS_FROM` را به عنوان شماره فرستنده پیامک تعریف کنید.
+To send an SMS from a number other than the default `SMS_FROM`, use the `from()` method when building your message:
 
 ```php
 $sms->from(string $from);
 ```
 
-### لاگ‌گیری خودکار
+### Automatic Logging
 
-متدهای مختلفی برای لاگ‌گیری قبل از ارسال SMS وجود دارد که شما می توانید به آبجکت پیامک ایجاد شده اضافه کنید:
+You can chain log configurations on your SMS instance before sending.
 
-#### بر اساس نوع پیامک:
+To help keep your code clean and logging consistent, especially when managing SMS sending from a central location, this package provides convenient methods to configure logging behavior based on the SMS type and sending status.
+
+**Note:** Before using any logging features, make sure to create the necessary tables. (See [Publish Vendor Files](#publish-vendor-files).)
+
+#### Log Based on SMS Type
 
 ```php
-$sms->log(bool $log = true);             // همه پیامک‌ها
-$sms->logOtp(bool $log = true);          // فقط پیامک‌های OTP
-$sms->logText(bool $log = true);         // فقط پیامک‌های متنی
-$sms->logPattern(bool $log = true);      // فقط پیامک‌های الگو
+$sms->log(bool $log = true);           // Log any type of SMS
+$sms->logOtp(bool $log = true);        // Log only OTP messages
+$sms->logText(bool $log = true);       // Log only text messages
+$sms->logPattern(bool $log = true);    // Log only pattern messages
 ```
 
-#### بر اساس وضعیت ارسال:
+#### Log Based on Sending Status
 
-**نکته:** این متدها حالت لاگ بر اساس نوع را فعال می کنند، یعنی اگر هیچکدام از متدهای `log*()` را قبل از آنها فراخوانی نکرده باشید، متد `log(true)` را فرا می خوانند.
+**Note:** These methods implicitly enable logging. If you use them without calling a `log*()` method first, `log(true)` will be applied automatically.
 
 ```php
-$sms->logSuccessful();   // فقط اگر ارسال موفق باشد
-$sms->logFailed();       // فقط اگر ارسال ناموفق باشد
+$sms->logSuccessful(); // Log only if the message was sent successfully
+$sms->logFailed();     // Log only if the message failed to send
 ```
 
-#### ترکیب Fluent:
+#### Make Your Log Behavior Fluent
 
-شما می توانید از ترکیب متدهای قبلی برای ایجاد شرایط دلخواه استفاده کنید:
+You can chain the logging methods to define custom logic fluently:
 
 ```php
-// همه انواع پیامک بجز یکبار رمز را فقط در صورتی که ارسال موفق بود لاگ بگیر
+// Example: Log all message types except OTPs, only if they are sent successfully
 $sms->log()->logOtp(false)->logSuccessful();
 ```
 
-#### پاک‌سازی لاگ‌های قدیمی:
+#### Prune Old Logs
 
-برای تمیز نگه داشتن جدول لاگ، این بسته یک دستور Artisan برای حذف لاگ‌های قدیمی فراهم کرده است. می‌توانید این دستور را با استفاده از [Laravel's task scheduler] زمان‌بندی کنید.
+To help keep your log table clean, this package provides an Artisan command to prune old log records. You can schedule this command using [Laravel's task scheduler]
 
-مثال: حذف لاگ‌هایی که بیش از ۳۰ روز از ایجادشان گذشته است.
+Example: Delete logs created before 30 days ago
 
 ```php
 use Illuminate\Support\Facades\Schedule;
@@ -216,51 +233,53 @@ use Illuminate\Support\Facades\Schedule;
 Schedule::command('iran-sms:prune-logs --days=30')->daily();
 ```
 
-### ارسال پیامک
+### Sending SMS
 
-برای ارسال:
+To send the SMS:
 
 ```php
 $sms->send();
 ```
 
-**نکته:** این متد در صورت بروز خطای کلاینت یا سرور، یک exception می دهد. برای اطلاع بیشتر [HTTP Client] را بررسی کنید.
+**Note:** This method throws an exception if a client or server error occurs. See the `throw` method in [HTTP Client].
 
-### بررسی وضعیت ارسال
+### Checking Sending Status
+
+To check the status after sending:
 
 ```php
 $sms->successful(); // bool
 $sms->failed();     // bool
 
-// در صورت ارسال موفق null خروجی می دهد.
+// Get the error message (returns null if successful)
 $sms->error();      // string|null
 ```
 
-### دریافت اعتبار حساب
+### Get Credit
 
-بر ای مشاهده اعتبار حساب (بر حسب ریال):
+To Retrieve your current credit balance (in Rials):
 
 ```php
 use Mastertek\IranSms\Facades\Sms;
 
-// ارائه‌دهنده پیش‌فرض
+// Default provider credit balance
 $credit = Sms::credit();                                // int
 
-// ارائه‌دهنده خاص
+// Specific provider credit balance
 $credit = Sms::provider(string $provider)->credit();    // int
 ```
 
-**نکته:** برای `$provider` از ستون `کلید ارائه‌دهنده` در [فهرست ارائه‌دهندگان پیامک](#فهرست-ارائه‌دهندگان-پیامک) استفاده کنید.
+**Note:** For the `$provider` name, refer to the `Provider Key` column in the [List of Available SMS Providers](#list-of-available-sms-providers).
 
-## استفاده با صف‌ها و نوتیفیکیشن‌ها
+## Working with Queues and Notifications
 
-### صف‌ها
+### Queues
 
-برای ارسال یک پیامک با استفاده از \[صف‌ها (queues)]، می‌توانید [یک نمونه پیامک ایجاد کنید](#ایجاد-پیامک) و آن را به یک job ارسال کنید که در آن متد `send()` را فراخوانی می‌کنید. می‌توانید از اینترفیس `Mastertek\IranSms\Contracts\Sms` به عنوان type-hint در استفاده کنید.
+To send an SMS instance using [queues], you can [create an SMS instance](#creating-an-sms-instance) and dispatch it to a job where you call the `send()` method. You can use the `Mastertek\IranSms\Contracts\Sms` interface as a constructor type-hint.
 
-**نکته:** توصیه می‌شود تنظیمات مربوط به لاگ را در همین‌جا پیکربندی کنید تا کد شما تمیز و منسجم باقی بماند.
+**Note:** It's recommended to configure log options here to keep your code clean and consistent.
 
-مثال:
+Example:
 
 ```php
 namespace App\Jobs;
@@ -288,13 +307,13 @@ final class SendSms implements ShouldQueue
 }
 ```
 
-### نوتیفیکیشن‌ها
+### Notifications
 
-برای ارسال پیامک با استفاده از \[Notificationها]، یک متد `toSms` در کلاس نوتیفیکیشن خود تعریف کرده و یک نمونه پیامک بازگردانید. همچنین، کانال `Mastertek\IranSms\Channels\SmsChannel` را در متد `via` قرار دهید.
+To send SMS using [notifications], define a `toSms` method in your notification class and return an SMS instance. Also, include `Mastertek\IranSms\Channels\SmsChannel` in the `via` method.
 
-**نکته:** متد `toSms` باید یک نمونه از کلاس پیامک (SMS) را همراه با تنظیمات لاگ (در صورت نیاز) بازگرداند. این کانال مسئول ارسال پیامک خواهد بود.
+**Note:** The `toSms` method must return an SMS instance with your log setup (if desired). The channel will handle sending it.
 
-مثال:
+Example:
 
 ```php
 namespace App\Notifications;
@@ -326,40 +345,44 @@ final class MyNotification extends Notification
 }
 ```
 
-## تست
+## Testing
 
-در این بخش از پکیج، می‌توانید ارسال پیامک‌ها را فیک (Fake) کنید تا بدون تماس واقعی با ارائه‌دهنده انجام شود. این قابلیت برای تست بسیار مفید است. در ادامه مستندات مربوط به متدهای `Sms::fake()` آمده است:
+This package provides fluent methods to fake and test SMS sending:
 
 ```php
+use Mastertek\IranSms\Facades\Sms;
+
 /**
- * تمام ارسال های پیامک برای ارائه دهنده پیش فرض موفق خروجی دهند
+ * Fake the default provider to return successful response
  */
 Sms::fake();
 
 /**
- * تمام ارسال های پیامک برای ارائه دهنده های لیست شده موفق خروجی دهند
+ * Fake specific providers to return successful responses
  *
- * نکته: برای ارائه دهنده پیش فرض از کلید default استفاده کنید
+ * Note: Use `default` as the provider key to target the default provider
  */
 Sms::fake([/* provider keys */]);
 
 /**
- * مشابه مورد بالا
+ * Equivalent to the above (explicit success definition)
  */
 Sms::fake([...], Sms::successfulRequest());
 
 /**
- * فیک کردن ارسال پیامک با پاسخ ناموفق. می‌توانید پیام خطا و کد خطا نیز مشخص کنید.
+ * Fake providers to return failed responses
+ *
+ * Optional: custom error message and error code
  */
-Sms::fake([...], Sms::failedRequest('خطا', 500));
+Sms::fake([...], Sms::failedRequest(string $errorMessage = 'Error Message', string|int $errorCode = 0));
 
 /**
- * شبیه‌سازی قطع ارتباط با ارائه‌دهنده (Connection Exception).
+ * Fake providers to throw a ConnectionException
  */
 Sms::fake([...], Sms::failedConnection());
 
 /**
- * تعریف رفتار متفاوت برای هر ارائه‌دهنده. (رفتار اختصاصی)
+ * Define different behaviors per provider
  */
 Sms::fake([
     'provider_one' => Sms::successfulRequest(),
@@ -368,9 +391,19 @@ Sms::fake([
 ]);
 ```
 
-**نکته:** تعریف رفتار سراسری و رفتار اختصاصی به‌طور هم‌زمان مجاز نیست.
+**Note:** Defining both _global behavior_ and _per-provider behaviors_ together is not allowed in a single call. Use one strategy per `fake()` call.
 
-**نکته:** اگر برای یک ارائه دهنده جند رفتار تعریف کنید، آخرین رفتار اجرا می شود.
+**Note:** If you define multiple behaviors for the same provider, the last one will override the previous definitions.
+
+## Contributing
+
+Thank you for considering contributing to the Iran SMS Laravel! The contribution guide can be found in the [CONTRIBUTING.md](CONTRIBUTING.md). This file provides a step-by-step guide to easily add a new driver (SMS provider) to the package.
+
+## License
+
+**Iran SMS Laravel** was created by **[Reza Vahidi](https://github.com/Mr-robot-r/)** under the **[MIT license](https://opensource.org/licenses/MIT)**.
+
+<!-- Links -->
 
 [sms.ir]: https://sms.ir/
 [melipayamak.com]: https://www.melipayamak.com/
@@ -379,7 +412,7 @@ Sms::fake([
 [farazsms.com]: https://farazsms.com/
 [raygansms.com]: https://raygansms.com/
 [webone-sms.com]: https://webone-sms.com/
-[amootsms.com]: https://www.amootsms.com/
+[amootsms.com]: https://www.amootsms.com/P
 [farapayamak.ir]: https://farapayamak.ir/
 [ghasedak.me]: https://ghasedak.me/
 [behinpayam.com]: https://behinpayam.com/
