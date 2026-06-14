@@ -16,15 +16,17 @@ final class UnsupportedMethodException extends LogicException
         parent::__construct($message);
     }
 
-    /**
-     * Make instance of this exception with prepared message
-     *
-     * @param  'otp'|'text'|'pattern'  $method
-     * @param  'otp'|'text'|'pattern'  $alternative
-     */
-    public static function make(string $driver, string $method, ?string $alternative = null): self
-    {
-        $message = sprintf('Provider "%s" does not support sending "%s" message, please use "%s" method instead.', $driver, $method, $alternative);
+    public static function make(
+        string $driver,
+        string $method,
+        ?string $alternative = null
+    ): self {
+        $message = sprintf(
+            'Provider "%s" does not support "%s" SMS method%s.',
+            $driver,
+            $method,
+            $alternative ? ", use \"{$alternative}\" instead" : ''
+        );
 
         return new self($message);
     }
